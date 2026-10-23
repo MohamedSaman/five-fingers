@@ -1,121 +1,129 @@
-<div class="p-4">
+@php
+    $rs = fn ($v, $d = 0) => number_format((float) $v, $d);
+    $typeChip = [
+        'labor' => ['violet', 'Artisan labour'],
+        'consumable' => ['green', 'Consumables'],
+        'energy' => ['amber', 'Kiln energy'],
+        'plating' => ['blue', 'Rhodium plating'],
+        'metal_loss' => ['red', 'Metal loss'],
+    ];
+@endphp
+
+<div class="page">
+    <div class="lw-loading" wire:loading.delay></div>
 
     <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <header class="page-head">
         <div>
-            <h2 class="h4 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-wallet2 text-warning"></i>
-                Manufacturing Expenses & Costing Audits
-            </h2>
-            <p class="text-muted small mb-0">Reconciliation of artisan wages, consumables, plating chemicals, and precious metal casting losses.</p>
+            <div class="eyebrow"><i class="bi bi-wallet2"></i> Production accounting</div>
+            <h1 class="page-title">Expenses & Costing</h1>
+            <p class="page-sub">Direct stage expenditures, artisan piece-rate wages, and metal loss write-offs.</p>
         </div>
-    </div>
+    </header>
 
-    <!-- Metrics Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="text-muted small fw-semibold text-uppercase">Artisan Labor Paid</div>
-                <div class="fs-4 fw-bold text-dark mt-1">Rs. {{ number_format($totalLabor, 2) }}</div>
-                <div class="small text-secondary mt-1"><i class="bi bi-people me-1"></i> Piece-rate wages</div>
+    <!-- KPIs -->
+    <section class="kpis" aria-label="Cost summary">
+        <article class="card kpi" style="--kpi-c: var(--violet); --kpi-glow: rgba(196,181,253,.15)">
+            <div class="kpi-top">
+                <span class="kpi-label">Artisan Labour</span>
+                <span class="kpi-icon"><i class="bi bi-person-badge"></i></span>
             </div>
-        </div>
+            <div class="kpi-value"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($totalLabor) }}</div>
+            <div class="kpi-foot">Direct wages paid across stages</div>
+        </article>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="text-muted small fw-semibold text-uppercase">Metal Loss Write-Offs</div>
-                <div class="fs-4 fw-bold text-danger mt-1">Rs. {{ number_format($totalMetalLoss, 2) }}</div>
-                <div class="small text-secondary mt-1"><i class="bi bi-fire me-1"></i> Casting & buffing loss</div>
+        <article class="card kpi" style="--kpi-c: var(--red); --kpi-glow: rgba(251,113,133,.15)">
+            <div class="kpi-top">
+                <span class="kpi-label">Metal Loss Scrap</span>
+                <span class="kpi-icon"><i class="bi bi-graph-down-arrow"></i></span>
             </div>
-        </div>
+            <div class="kpi-value" style="color:var(--red)"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($totalMetalLoss) }}</div>
+            <div class="kpi-foot">Casting & polishing loss value</div>
+        </article>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="text-muted small fw-semibold text-uppercase">Consumables & Gas</div>
-                <div class="fs-4 fw-bold text-warning mt-1">Rs. {{ number_format($totalConsumables, 2) }}</div>
-                <div class="small text-secondary mt-1"><i class="bi bi-droplet me-1"></i> Wax, plaster, plating</div>
+        <article class="card kpi" style="--kpi-c: var(--green); --kpi-glow: rgba(94,230,154,.15)">
+            <div class="kpi-top">
+                <span class="kpi-label">Consumables & Gas</span>
+                <span class="kpi-icon"><i class="bi bi-droplet"></i></span>
             </div>
-        </div>
+            <div class="kpi-value"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($totalConsumables) }}</div>
+            <div class="kpi-foot">Wax, investment powder, chemicals</div>
+        </article>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="text-muted small fw-semibold text-uppercase">Total Manufacturing Expenses</div>
-                <div class="fs-4 fw-bold text-primary mt-1">Rs. {{ number_format($grandTotal, 2) }}</div>
-                <div class="small text-secondary mt-1"><i class="bi bi-cash-stack me-1"></i> All jobs combined</div>
+        <article class="card kpi" style="--kpi-c: var(--gold); --kpi-glow: rgba(217,180,90,.15)">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Manufacturing</span>
+                <span class="kpi-icon"><i class="bi bi-cash-stack"></i></span>
             </div>
-        </div>
-    </div>
-
-    <!-- Filters & Search -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-        <div class="card-body p-3">
-            <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" wire:model.live.debounce.300ms="search" class="form-control bg-light border-start-0" placeholder="Search description, job SKU, piece name...">
-                    </div>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <select wire:model.live="expenseType" class="form-select bg-light">
-                        <option value="">All Expense Types</option>
-                        <option value="labor">Artisan Labor</option>
-                        <option value="consumable">Consumables & Supplies</option>
-                        <option value="energy">Kiln Energy / Gas</option>
-                        <option value="plating">Rhodium Plating</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
+            <div class="kpi-value gold-text"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($grandTotal) }}</div>
+            <div class="kpi-foot">Combined workshop spend</div>
+        </article>
+    </section>
 
     <!-- Expenses Table -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
-        <div class="table-responsive">
-            <table class="table align-middle table-hover mb-0">
-                <thead class="table-light text-uppercase small text-muted">
+    <section class="card">
+        <div class="toolbar">
+            <div class="search">
+                <i class="bi bi-search"></i>
+                <input type="search" class="input" placeholder="Search description, job SKU or piece name…" wire:model.live.debounce.300ms="search" aria-label="Search expenses">
+            </div>
+
+            <div class="filter-tabs" role="tablist" aria-label="Expense type filter">
+                @foreach (['' => 'All', 'labor' => 'Labour', 'consumable' => 'Consumables', 'energy' => 'Energy', 'plating' => 'Plating'] as $val => $label)
+                    <button type="button" role="tab" class="{{ $expenseType === $val ? 'is-active' : '' }}" wire:click="$set('expenseType', '{{ $val }}')" aria-selected="{{ $expenseType === $val ? 'true' : 'false' }}">{{ $label }}</button>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="expenses-caption">
+            <table class="tbl">
+                <caption id="expenses-caption" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Manufacturing expenses</caption>
+                <thead>
                     <tr>
-                        <th class="ps-3 py-3">Date</th>
-                        <th class="py-3">Jewelry Piece / SKU</th>
-                        <th class="py-3">Stage</th>
-                        <th class="py-3">Category</th>
-                        <th class="py-3">Description</th>
-                        <th class="py-3 text-end pe-3">Amount (Rs.)</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Job / Piece</th>
+                        <th scope="col">Stage</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Description</th>
+                        <th scope="col" class="r">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($expenses as $exp)
+                    @forelse ($expenses as $exp)
+                        @php
+                            [$chipColor, $chipLabel] = $typeChip[$exp->expense_type] ?? ['', ucfirst($exp->expense_type)];
+                        @endphp
                         <tr>
-                            <td class="ps-3 small text-muted">
-                                {{ $exp->created_at->format('M d, Y') }}
-                            </td>
+                            <td class="dim tnum" style="white-space:nowrap">{{ $exp->created_at->format('d M Y') }}</td>
                             <td>
-                                <a href="{{ route('production.lifecycle', $exp->product_id) }}" class="fw-bold text-dark text-decoration-none">
+                                <a href="{{ route('production.lifecycle', $exp->production_product_id) }}" class="job-title" style="display:block">
                                     {{ $exp->product->title ?? 'N/A' }}
                                 </a>
-                                <div class="font-monospace small text-muted">{{ $exp->product->sku ?? '' }}</div>
+                                <span class="mono dim" style="font-size:11.5px">{{ $exp->product->sku ?? '' }}</span>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">
+                                <span class="chip" style="height:22px;font-size:11px">
                                     {{ $exp->stage->step_number ?? '' }}. {{ $exp->stage->step_name ?? 'General' }}
                                 </span>
                             </td>
                             <td>
-                                <span class="badge @if($exp->expense_type === 'labor') bg-primary-subtle text-primary @elseif($exp->expense_type === 'consumable') bg-warning-subtle text-warning @else bg-secondary-subtle text-secondary @endif text-uppercase">
-                                    {{ $exp->expense_type }}
+                                <span class="chip {{ $chipColor }}" style="height:22px;font-size:11px">
+                                    <span class="dot"></span>{{ $chipLabel }}
                                 </span>
                             </td>
-                            <td class="small text-secondary">{{ $exp->description }}</td>
-                            <td class="text-end pe-3 fw-bold font-monospace text-dark">
-                                Rs. {{ number_format($exp->amount, 2) }}
+                            <td class="muted" style="font-size:13px">{{ $exp->description }}</td>
+                            <td class="r">
+                                <span class="money tnum"><span class="cur">Rs</span>{{ $rs($exp->amount) }}</span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <i class="bi bi-receipt fs-2 text-muted"></i>
-                                <div class="mt-2">No production expenses logged yet. Complete lifecycle steps to record artisan labor and consumables.</div>
+                            <td colspan="6">
+                                <div class="empty">
+                                    <div class="empty-icon"><i class="bi bi-receipt"></i></div>
+                                    <h3>No expenses logged yet</h3>
+                                    <p class="dim">When artisans complete stages, their labor and consumables appear here automatically.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse
@@ -123,11 +131,7 @@
             </table>
         </div>
 
-        @if($expenses->hasPages())
-            <div class="p-3 border-top">
-                {{ $expenses->links() }}
-            </div>
-        @endif
-    </div>
+        {{ $expenses->links('livewire.production.partials.pager') }}
+    </section>
 
 </div>

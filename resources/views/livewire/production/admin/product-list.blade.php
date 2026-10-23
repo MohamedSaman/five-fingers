@@ -1,215 +1,157 @@
-<div class="p-4">
+@php
+    $catIcons = ['Ring' => 'bi-record-circle', 'Necklace' => 'bi-suit-heart', 'Pendant' => 'bi-droplet', 'Earrings' => 'bi-moon-stars', 'Bracelet' => 'bi-circle', 'Bangle' => 'bi-circle'];
+    $metalTone = fn ($m) => str_contains($m, 'White') || str_contains($m, 'Platinum') || str_contains($m, 'Silver') ? 'white' : (str_contains($m, 'Rose') ? 'rose' : '');
+    $statusChip = ['in_production' => ['amber', 'In production'], 'qc_review' => ['red', 'QC review'], 'completed' => ['green', 'Completed'], 'draft' => ['', 'Draft']];
+    $rs = fn ($v, $d = 0) => number_format((float) $v, $d);
+@endphp
 
-    <!-- Top Action Header & Metrics -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<div class="page">
+    <div class="lw-loading" wire:loading.delay></div>
+
+    <!-- Header -->
+    <header class="page-head">
         <div>
-            <h2 class="h4 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-gem text-warning"></i>
-                Jewelry Manufacturing Jobs
-            </h2>
-            <p class="text-muted small mb-0">Track custom pieces, artisan stage assignments, precious metal loss, and real-time costs.</p>
+            <div class="eyebrow"><i class="bi bi-gem"></i> Atelier workshop</div>
+            <h1 class="page-title">Jewellery Jobs</h1>
+            <p class="page-sub">Every piece from CAD to vault — stage by stage, gram by gram, rupee by rupee.</p>
         </div>
-
-        <button wire:click="openModal" class="btn btn-warning fw-semibold px-4 py-2 d-flex align-items-center gap-2 shadow-sm" style="background: linear-gradient(135deg, #e6ca65 0%, #d4af37 100%); border: none; color: #111;">
-            <i class="bi bi-plus-circle-fill"></i>
-            <span>+ Create New Jewelry Job</span>
+        <button type="button" class="btn btn-gold btn-lg" wire:click="openModal" id="btn-create-job">
+            <i class="bi bi-plus-lg"></i> New jewellery job
         </button>
-    </div>
+    </header>
 
-    <!-- Metric Summary Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Active Production Jobs</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">{{ \App\Models\ProductionProduct::where('status', 'in_production')->count() }} Pieces</div>
-                    </div>
-                    <div class="rounded-3 bg-warning-subtle text-warning p-3 fs-4">
-                        <i class="bi bi-hammer"></i>
-                    </div>
-                </div>
+    <!-- KPIs -->
+    <section class="kpis" aria-label="Summary">
+        <article class="card kpi">
+            <div class="kpi-top"><span class="kpi-label">On the bench</span><span class="kpi-icon"><i class="bi bi-hammer"></i></span></div>
+            <div class="kpi-value">{{ $kpi['active'] }}<small>pieces</small></div>
+            <div class="kpi-foot">{{ $kpi['done'] }} completed overall</div>
+        </article>
+        <article class="card kpi" style="--kpi-c: var(--amber); --kpi-glow: rgba(251,191,36,.14)">
+            <div class="kpi-top"><span class="kpi-label">Metal in process</span><span class="kpi-icon"><i class="bi bi-coin"></i></span></div>
+            <div class="kpi-value">{{ number_format($kpi['metal'], 2) }}<small>g</small></div>
+            <div class="kpi-foot">Issued to active jobs</div>
+        </article>
+        <article class="card kpi" style="--kpi-c: var(--blue); --kpi-glow: rgba(125,211,252,.12)">
+            <div class="kpi-top"><span class="kpi-label">WIP cost</span><span class="kpi-icon"><i class="bi bi-cash-stack"></i></span></div>
+            <div class="kpi-value"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($kpi['wip']) }}</div>
+            <div class="kpi-foot">Accrued across active jobs</div>
+        </article>
+        <article class="card kpi" style="--kpi-c: var(--green); --kpi-glow: rgba(94,230,154,.12)">
+            <div class="kpi-top"><span class="kpi-label">Pipeline value</span><span class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></span></div>
+            <div class="kpi-value"><small style="margin:0 4px 0 0">Rs</small>{{ $rs($kpi['value']) }}</div>
+            <div class="kpi-foot">{{ $kpi['qc'] }} awaiting QC</div>
+        </article>
+    </section>
+
+    <!-- Jobs table -->
+    <section class="card">
+        <div class="toolbar">
+            <div class="search">
+                <i class="bi bi-search"></i>
+                <input type="search" class="input" placeholder="Search by title, SKU or category…" wire:model.live.debounce.300ms="search" aria-label="Search jobs">
             </div>
+
+            <div class="filter-tabs" role="tablist" aria-label="Status filter">
+                @foreach (['' => 'All', 'in_production' => 'Active', 'qc_review' => 'QC', 'completed' => 'Done'] as $val => $label)
+                    <button type="button" role="tab" class="{{ $statusFilter === $val ? 'is-active' : '' }}" wire:click="setStatus('{{ $val }}')" aria-selected="{{ $statusFilter === $val ? 'true' : 'false' }}">{{ $label }}</button>
+                @endforeach
+            </div>
+
+            <select class="select" wire:model.live="metalFilter" aria-label="Metal filter">
+                <option value="">All metals</option>
+                @foreach (['18K Yellow Gold', '18K White Gold', '18K Rose Gold', '22K Yellow Gold', '24K Pure Gold', '950 Platinum', '925 Sterling Silver'] as $m)
+                    <option value="{{ $m }}">{{ $m }}</option>
+                @endforeach
+            </select>
+
+            @if ($stageFilter)
+                <span class="chip gold">Stage {{ $stageFilter }} · {{ $standardStages[$stageFilter]['name'] ?? '' }}
+                    <button type="button" wire:click="$set('stageFilter','')" style="all:unset;cursor:pointer;margin-left:4px" aria-label="Clear stage filter"><i class="bi bi-x"></i></button>
+                </span>
+            @endif
         </div>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Metal In Casting</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">{{ number_format(\App\Models\ProductionProduct::where('status', 'in_production')->sum('target_metal_weight'), 2) }} g</div>
-                    </div>
-                    <div class="rounded-3 bg-success-subtle text-success p-3 fs-4">
-                        <i class="bi bi-pie-chart-fill"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">WIP Accrued Cost</div>
-                        <div class="fs-4 fw-bold text-primary mt-1">Rs. {{ number_format(\App\Models\ProductionProduct::where('status', 'in_production')->sum('total_manufacturing_cost'), 2) }}</div>
-                    </div>
-                    <div class="rounded-3 bg-primary-subtle text-primary p-3 fs-4">
-                        <i class="bi bi-cash-coin"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Awaiting Final QC</div>
-                        <div class="fs-4 fw-bold text-info mt-1">{{ \App\Models\ProductionProduct::where('status', 'qc_review')->count() }} Pieces</div>
-                    </div>
-                    <div class="rounded-3 bg-info-subtle text-info p-3 fs-4">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter & Search Controls -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-        <div class="card-body p-3">
-            <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" wire:model.live.debounce.300ms="search" class="form-control bg-light border-start-0" placeholder="Search SKU, title, ring, necklace...">
-                    </div>
-                </div>
-
-                <div class="col-6 col-md-2">
-                    <select wire:model.live="statusFilter" class="form-select bg-light">
-                        <option value="">All Statuses</option>
-                        <option value="in_production">In Production</option>
-                        <option value="qc_review">QC Review</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-
-                <div class="col-6 col-md-2">
-                    <select wire:model.live="metalFilter" class="form-select bg-light">
-                        <option value="">All Metal Alloys</option>
-                        <option value="18K Yellow Gold">18K Yellow Gold</option>
-                        <option value="18K White Gold">18K White Gold</option>
-                        <option value="18K Rose Gold">18K Rose Gold</option>
-                        <option value="22K Yellow Gold">22K Yellow Gold</option>
-                        <option value="950 Platinum">950 Platinum</option>
-                        <option value="925 Sterling Silver">925 Sterling Silver</option>
-                    </select>
-                </div>
-
-                <div class="col-12 col-md-4 text-md-end">
-                    <span class="text-muted small">Showing {{ $products->total() }} total jewelry jobs</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Products Table -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
-        <div class="table-responsive">
-            <table class="table align-middle table-hover mb-0">
-                <thead class="table-light text-uppercase small text-muted">
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="jobs-caption">
+            <table class="tbl">
+                <caption id="jobs-caption" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Jewellery manufacturing jobs</caption>
+                <thead>
                     <tr>
-                        <th class="ps-3 py-3">Job / SKU</th>
-                        <th class="py-3">Jewelry Piece & Specs</th>
-                        <th class="py-3">Gemstones</th>
-                        <th class="py-3">Lifecycle Progress</th>
-                        <th class="py-3 text-end">Accrued Cost</th>
-                        <th class="py-3 text-end">MSRP Price</th>
-                        <th class="pe-3 py-3 text-center">Action</th>
+                        <th scope="col">Piece</th>
+                        <th scope="col">Gemstones</th>
+                        <th scope="col">Lifecycle</th>
+                        <th scope="col" class="r">Cost so far</th>
+                        <th scope="col" class="r">Retail (MSRP)</th>
+                        <th scope="col"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Open</span></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($products as $product)
+                    @forelse ($products as $product)
                         @php
-                            $totalStages = $product->stages->count();
-                            $completedStages = $product->stages->where('status', 'completed')->count();
-                            $percent = $totalStages > 0 ? round(($completedStages / $totalStages) * 100) : 0;
-                            $currentStage = $product->stages->firstWhere('status', 'in_progress') ?? $product->stages->last();
+                            $total = $product->stages->count();
+                            $done = $product->stages->where('status', 'completed')->count();
+                            $pct = $total ? round($done / $total * 100) : 0;
+                            $current = $product->stages->firstWhere('status', 'in_progress') ?? $product->stages->firstWhere('status', 'failed');
+                            [$sc, $sl] = $statusChip[$product->status] ?? ['', ucfirst($product->status)];
                         @endphp
-                        <tr>
-                            <td class="ps-3">
-                                <div class="fw-bold text-dark font-monospace">{{ $product->sku }}</div>
-                                <span class="badge @if($product->status === 'completed') bg-success-subtle text-success @elseif($product->status === 'qc_review') bg-info-subtle text-info @else bg-warning-subtle text-warning @endif rounded-pill px-2 py-1 mt-1">
-                                    {{ ucwords(str_replace('_', ' ', $product->status)) }}
-                                </span>
-                            </td>
-
-                            <td>
-                                <div class="fw-bold text-dark">{{ $product->title }}</div>
-                                <div class="small text-muted d-flex align-items-center gap-2 mt-1">
-                                    <span class="badge bg-light text-dark border">{{ $product->category }}</span>
-                                    <span><i class="bi bi-circle-fill text-warning me-1" style="font-size: 0.5rem;"></i>{{ $product->metal_type }} ({{ number_format($product->target_metal_weight, 2) }}g)</span>
-                                </div>
-                            </td>
-
-                            <td>
-                                @if($product->stones->count() > 0)
-                                    <div class="small">
-                                        @foreach($product->stones->take(2) as $stone)
-                                            <div class="text-secondary">
-                                                <i class="bi bi-gem me-1 text-primary"></i>
-                                                {{ $stone->quantity }}x {{ $stone->stone_type }} ({{ $stone->carat_weight }}ct)
-                                            </div>
-                                        @endforeach
-                                        @if($product->stones->count() > 2)
-                                            <span class="text-muted fst-italic" style="font-size: 0.75rem;">+{{ $product->stones->count() - 2 }} more</span>
-                                        @endif
+                        <tr class="row-link" wire:key="job-{{ $product->id }}" onclick="window.location='{{ route('production.lifecycle', $product->id) }}'">
+                            <th scope="row">
+                                <div class="job">
+                                    <div class="job-thumb {{ $metalTone($product->metal_type) }}"><i class="bi {{ $catIcons[$product->category] ?? 'bi-gem' }}"></i></div>
+                                    <div style="min-width:0">
+                                        <div class="job-title">{{ $product->title }}</div>
+                                        <div class="job-meta">
+                                            <span class="mono">{{ $product->sku }}</span>
+                                            <span>·</span>
+                                            <span>{{ $product->metal_type }}</span>
+                                            <span>·</span>
+                                            <span class="tnum">{{ number_format($product->target_metal_weight, 2) }} g</span>
+                                        </div>
                                     </div>
-                                @else
-                                    <span class="text-muted small fst-italic">Plain Metal / No Stones</span>
+                                </div>
+                            </th>
+                            <td data-label="Gemstones">
+                                @forelse ($product->stones->take(2) as $stone)
+                                    <div class="stone-line"><i class="bi bi-diamond-fill"></i> {{ $stone->quantity }}× {{ $stone->stone_type }} <span class="dim tnum">{{ rtrim(rtrim(number_format($stone->carat_weight, 3), '0'), '.') }}ct</span></div>
+                                @empty
+                                    <span class="dim" style="font-size:12.5px">Plain metal</span>
+                                @endforelse
+                                @if ($product->stones->count() > 2)
+                                    <span class="dim" style="font-size:11.5px">+{{ $product->stones->count() - 2 }} more</span>
                                 @endif
                             </td>
-
-                            <td style="min-width: 220px;">
-                                <div class="d-flex align-items-center justify-content-between small mb-1">
-                                    <span class="fw-semibold text-dark">{{ $currentStage ? $currentStage->step_name : 'Planning' }}</span>
-                                    <span class="text-muted">{{ $completedStages }}/{{ $totalStages }} ({{ $percent }}%)</span>
+                            <td data-label="Lifecycle" class="progress-cell">
+                                <div class="progress-top">
+                                    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                                        <span class="chip {{ $sc }}" style="height:20px;font-size:10.5px"><span class="dot"></span>{{ $sl }}</span>
+                                        <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $current?->step_name ?? ($product->status === 'completed' ? 'In vault' : '—') }}</span>
+                                    </span>
+                                    <span class="dim tnum" style="white-space:nowrap">{{ $done }}/{{ $total }}</span>
                                 </div>
-                                <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $percent }}%"></div>
-                                </div>
+                                <div class="progress"><span style="width: {{ $pct }}%"></span></div>
                             </td>
-
-                            <td class="text-end">
-                                <div class="fw-bold text-dark font-monospace">Rs. {{ number_format($product->total_manufacturing_cost, 2) }}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">
-                                    Loss: Rs. {{ number_format($product->total_metal_loss_cost, 2) }}
-                                </div>
+                            <td data-label="Cost so far" class="r">
+                                <div class="money"><span class="cur">Rs</span>{{ $rs($product->total_manufacturing_cost) }}</div>
+                                <div class="sub-money">Loss Rs {{ $rs($product->total_metal_loss_cost) }}</div>
                             </td>
-
-                            <td class="text-end">
-                                <div class="fw-bold text-success font-monospace">Rs. {{ number_format($product->recommended_selling_price, 2) }}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">+{{ $product->markup_percentage }}% markup</div>
+                            <td data-label="Retail (MSRP)" class="r">
+                                <div class="money green"><span class="cur">Rs</span>{{ $rs($product->recommended_selling_price) }}</div>
+                                <div class="sub-money">+{{ rtrim(rtrim(number_format($product->markup_percentage, 2), '0'), '.') }}% markup</div>
                             </td>
-
-                            <td class="pe-3 text-center">
-                                <a href="{{ route('production.lifecycle', $product->id) }}" class="btn btn-sm btn-dark px-3 shadow-sm d-inline-flex align-items-center gap-1">
-                                    <span>Open Lifecycle</span>
-                                    <i class="bi bi-arrow-right"></i>
+                            <td class="r">
+                                <a href="{{ route('production.lifecycle', $product->id) }}" class="btn btn-sm" onclick="event.stopPropagation()">
+                                    Lifecycle <i class="bi bi-arrow-right"></i>
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="py-4">
-                                    <i class="bi bi-gem text-muted" style="font-size: 3rem;"></i>
-                                    <h5 class="fw-semibold mt-3 text-dark">No Jewelry Jobs Found</h5>
-                                    <p class="text-muted small">Create your first custom jewelry manufacturing job with our 15-stage pipeline.</p>
-                                    <button wire:click="openModal" class="btn btn-warning btn-sm fw-semibold mt-2 px-3">
-                                        + Create New Job
-                                    </button>
+                            <td colspan="6">
+                                <div class="empty">
+                                    <div class="empty-icon"><i class="bi bi-gem"></i></div>
+                                    <h3>No jobs here yet</h3>
+                                    <p>Start a new piece — choose metal, stones and the exact stages it needs.</p>
+                                    <button type="button" class="btn btn-gold" wire:click="openModal"><i class="bi bi-plus-lg"></i> New jewellery job</button>
                                 </div>
                             </td>
                         </tr>
@@ -218,246 +160,177 @@
             </table>
         </div>
 
-        @if($products->hasPages())
-            <div class="p-3 border-top">
-                {{ $products->links() }}
-            </div>
-        @endif
-    </div>
+        {{ $products->links('livewire.production.partials.pager') }}
+    </section>
 
-    <!-- CREATE JEWELRY JOB MODAL -->
-    @if($showCreateModal)
-        <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.65);" tabindex="-1">
-            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content border-0 shadow-lg rounded-3">
-                    
-                    <!-- Modal Header -->
-                    <div class="modal-header bg-dark text-white px-4 py-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-gem text-warning fs-5"></i>
-                            <h5 class="modal-title fw-bold mb-0">Create New Jewelry Manufacturing Job</h5>
-                        </div>
-                        <button type="button" wire:click="closeModal" class="btn-close btn-close-white" aria-label="Close"></button>
+    <!-- ================= CREATE JOB DIALOG ================= -->
+    @if ($showCreateModal)
+        <dialog class="pd-dialog" wire:ignore.self x-data x-init="$el.showModal()" @close="$wire.closeModal()" aria-labelledby="create-job-title">
+            <form wire:submit="createProduct" style="display:contents">
+                <div class="dlg-head">
+                    <div>
+                        <div class="eyebrow" style="margin-bottom:4px"><i class="bi bi-stars"></i> New piece</div>
+                        <h2 class="dlg-title" id="create-job-title">Create jewellery job</h2>
                     </div>
-
-                    <!-- Modal Body -->
-                    <div class="modal-body p-4 bg-light">
-                        <form wire:submit.prevent="createProduct">
-                            
-                            <!-- Section 1: Product & Metal Specifications -->
-                            <div class="card border-0 shadow-sm rounded-3 p-3 mb-4 bg-white">
-                                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center gap-2">
-                                    <i class="bi bi-info-circle text-primary"></i>
-                                    1. Design & Metal Specifications
-                                </h6>
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-semibold">Job SKU / Code *</label>
-                                        <input type="text" wire:model="sku" class="form-control font-monospace" required>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label class="form-label small fw-semibold">Jewelry Item Title *</label>
-                                        <input type="text" wire:model="title" class="form-control" placeholder="e.g. Royal Blue Sapphire Halo Ring" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small fw-semibold">Category *</label>
-                                        <select wire:model="category" class="form-select">
-                                            <option value="Ring">Ring</option>
-                                            <option value="Necklace">Necklace</option>
-                                            <option value="Pendant">Pendant</option>
-                                            <option value="Earrings">Earrings</option>
-                                            <option value="Bracelet">Bracelet</option>
-                                            <option value="Bangle">Bangle</option>
-                                            <option value="Custom Jewelry">Custom Jewelry</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-semibold">Metal Alloy *</label>
-                                        <select wire:model.live="metal_type" class="form-select">
-                                            <option value="18K Yellow Gold">18K Yellow Gold (Au 750)</option>
-                                            <option value="18K White Gold">18K White Gold (Au 750)</option>
-                                            <option value="18K Rose Gold">18K Rose Gold (Au 750)</option>
-                                            <option value="22K Yellow Gold">22K Yellow Gold (Au 916)</option>
-                                            <option value="24K Pure Gold">24K Pure Gold (Au 999)</option>
-                                            <option value="950 Platinum">950 Platinum (Pt 950)</option>
-                                            <option value="925 Sterling Silver">925 Sterling Silver</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-semibold">Estimated Target Weight (g) *</label>
-                                        <div class="input-group">
-                                            <input type="number" step="0.001" wire:model="target_metal_weight" class="form-control" required>
-                                            <span class="input-group-text">grams</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-semibold">Spot Gold Price / Gram (Rs.) *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">Rs.</span>
-                                            <input type="number" step="100" wire:model="metal_unit_price_per_g" class="form-control" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label small fw-semibold">Target Markup %</label>
-                                        <div class="input-group">
-                                            <input type="number" step="1" wire:model="markup_percentage" class="form-control">
-                                            <span class="input-group-text">%</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Master Piece Mold Checkbox -->
-                                    <div class="col-12 mt-3">
-                                        <div class="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between">
-                                            <div>
-                                                <div class="form-check form-switch mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="masterPieceSwitch" wire:model.live="is_master_piece_required">
-                                                    <label class="form-check-label fw-bold text-dark ms-2" for="masterPieceSwitch">
-                                                        Create Master Piece & Vulcanized Rubber Mold
-                                                    </label>
-                                                </div>
-                                                <div class="text-muted small ms-4">
-                                                    Check this if you plan to mass-produce or store a rubber mold for repeat injections. If unchecked, direct 3D castable resin printing will be used.
-                                                </div>
-                                            </div>
-                                            <span class="badge @if($is_master_piece_required) bg-success @else bg-secondary @endif">
-                                                {{ $is_master_piece_required ? 'MOLD ENABLED' : 'ONE-OFF CUSTOM' }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Section 2: Gemstones Required Table -->
-                            <div class="card border-0 shadow-sm rounded-3 p-3 mb-4 bg-white">
-                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-                                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                                        <i class="bi bi-gem text-info"></i>
-                                        2. Gemstones Specification & Allocation
-                                    </h6>
-                                    <button type="button" wire:click="addStoneRow" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
-                                        <i class="bi bi-plus"></i> Add Gemstone Row
-                                    </button>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <thead class="table-light small">
-                                            <tr>
-                                                <th>Stone Variety</th>
-                                                <th>Cut / Shape</th>
-                                                <th>Dimensions</th>
-                                                <th>Qty</th>
-                                                <th>Carat Weight</th>
-                                                <th>Setting Method</th>
-                                                <th>Unit Cost (Rs.)</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($stones as $index => $stone)
-                                                <tr>
-                                                    <td>
-                                                        <input type="text" wire:model="stones.{{ $index }}.stone_type" class="form-control form-control-sm" placeholder="e.g. Blue Sapphire">
-                                                    </td>
-                                                    <td>
-                                                        <select wire:model="stones.{{ $index }}.cut_shape" class="form-select form-select-sm">
-                                                            <option value="Round Brilliant">Round Brilliant</option>
-                                                            <option value="Oval">Oval</option>
-                                                            <option value="Cushion">Cushion</option>
-                                                            <option value="Princess">Princess</option>
-                                                            <option value="Emerald Cut">Emerald Cut</option>
-                                                            <option value="Pear">Pear</option>
-                                                            <option value="Marquise">Marquise</option>
-                                                        </select>
-                                                    </td>
-                                                    <td>
-                                                        <input type="text" wire:model="stones.{{ $index }}.dimensions_mm" class="form-control form-control-sm" placeholder="e.g. 7x5mm">
-                                                    </td>
-                                                    <td style="width: 80px;">
-                                                        <input type="number" wire:model="stones.{{ $index }}.quantity" class="form-control form-control-sm" min="1">
-                                                    </td>
-                                                    <td style="width: 100px;">
-                                                        <input type="number" step="0.01" wire:model="stones.{{ $index }}.carat_weight" class="form-control form-control-sm">
-                                                    </td>
-                                                    <td>
-                                                        <select wire:model="stones.{{ $index }}.setting_method" class="form-select form-select-sm">
-                                                            <option value="hand_prong">Hand Setting (Prong)</option>
-                                                            <option value="wax_cast">Wax Setting (Cast-in-Place)</option>
-                                                            <option value="bezel">Hand Setting (Bezel)</option>
-                                                            <option value="pave">Micro Pavé</option>
-                                                            <option value="channel">Channel</option>
-                                                        </select>
-                                                    </td>
-                                                    <td style="width: 130px;">
-                                                        <input type="number" wire:model="stones.{{ $index }}.stone_unit_cost" class="form-control form-control-sm">
-                                                    </td>
-                                                    <td class="text-center">
-                                                        @if(count($stones) > 1)
-                                                            <button type="button" wire:click="removeStoneRow({{ $index }})" class="btn btn-sm btn-link text-danger p-0">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Section 3: Select Required Stages (Checkboxes) -->
-                            <div class="card border-0 shadow-sm rounded-3 p-3 mb-4 bg-white">
-                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                                            <i class="bi bi-diagram-3 text-warning"></i>
-                                            3. Manufacturing Lifecycle Stages
-                                        </h6>
-                                        <p class="text-muted small mb-0">Check the stages required for this piece. Unchecked stages will be omitted from the product life cycle.</p>
-                                    </div>
-                                    <span class="badge bg-dark">{{ count(array_filter($selectedStages)) }} of 15 Stages Selected</span>
-                                </div>
-
-                                <div class="row g-2">
-                                    @foreach($standardStages as $stepNum => $stageMeta)
-                                        <div class="col-md-6 col-lg-4">
-                                            <div class="p-2 border rounded-2 bg-light d-flex align-items-start gap-2 h-100">
-                                                <input class="form-check-input mt-1" type="checkbox" id="stage_{{ $stepNum }}" wire:model="selectedStages.{{ $stepNum }}">
-                                                <div class="flex-grow-1">
-                                                    <label class="form-check-label fw-bold text-dark small d-block" for="stage_{{ $stepNum }}">
-                                                        {{ $stepNum }}. {{ $stageMeta['name'] }}
-                                                    </label>
-                                                    <span class="text-muted d-block" style="font-size: 0.72rem; line-height: 1.3;">
-                                                        {{ $stageMeta['description'] }}
-                                                    </span>
-                                                    <span class="badge bg-secondary-subtle text-secondary border mt-1" style="font-size: 0.65rem;">
-                                                        <i class="bi bi-person me-1"></i>{{ $stageMeta['worker_role'] }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Modal Footer -->
-                            <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top">
-                                <button type="button" wire:click="closeModal" class="btn btn-secondary px-4">Cancel</button>
-                                <button type="submit" class="btn btn-warning fw-semibold px-4 shadow-sm" style="background: linear-gradient(135deg, #e6ca65 0%, #d4af37 100%); border: none; color: #111;">
-                                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Create & Launch Production Lifecycle
-                                </button>
-                            </div>
-
-                        </form>
-                    </div>
-
+                    <button type="button" class="icon-btn" wire:click="closeModal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
                 </div>
-            </div>
-        </div>
-    @endif
 
+                <div class="dlg-body">
+
+                    <!-- 1. Design & metal -->
+                    <section class="dlg-section">
+                        <div class="dlg-section-head">
+                            <div class="dlg-section-title">
+                                <span class="step-num">1</span>
+                                <div><h3>Design & metal</h3><p>What are we making, and in which alloy?</p></div>
+                            </div>
+                        </div>
+
+                        <div class="grid-4" style="grid-template-columns: 1fr 2fr 1fr 1.2fr">
+                            <div class="field">
+                                <label for="f-sku">Job SKU</label>
+                                <input id="f-sku" class="input mono" wire:model="sku" required>
+                                @error('sku') <span class="error">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="field">
+                                <label for="f-title">Piece title</label>
+                                <input id="f-title" class="input" wire:model="title" placeholder="e.g. Royal Blue Sapphire Halo Ring" required autofocus>
+                                @error('title') <span class="error">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="field">
+                                <label for="f-cat">Category</label>
+                                <select id="f-cat" class="select" wire:model="category">
+                                    @foreach (['Ring', 'Necklace', 'Pendant', 'Earrings', 'Bracelet', 'Bangle', 'Custom'] as $c)
+                                        <option>{{ $c }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="f-metal">Metal alloy</label>
+                                <select id="f-metal" class="select" wire:model.live="metal_type">
+                                    <option value="18K Yellow Gold">18K Yellow Gold · 750</option>
+                                    <option value="18K White Gold">18K White Gold · 750</option>
+                                    <option value="18K Rose Gold">18K Rose Gold · 750</option>
+                                    <option value="22K Yellow Gold">22K Yellow Gold · 916</option>
+                                    <option value="24K Pure Gold">24K Pure Gold · 999</option>
+                                    <option value="950 Platinum">950 Platinum</option>
+                                    <option value="925 Sterling Silver">925 Sterling Silver</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid-3" style="margin-top:12px">
+                            <div class="field">
+                                <label for="f-weight">Target metal weight</label>
+                                <div class="input-wrap"><input id="f-weight" type="number" step="0.001" min="0" class="input" wire:model.live.debounce.400ms="target_metal_weight" required><span class="unit">g</span></div>
+                                @error('target_metal_weight') <span class="error">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="field">
+                                <label for="f-rate">Gold rate</label>
+                                <div class="input-wrap prefix"><span class="unit">Rs</span><input id="f-rate" type="number" step="1" min="0" class="input" wire:model.live.debounce.400ms="metal_unit_price_per_g" required></div>
+                            </div>
+                            <div class="field">
+                                <label for="f-markup">Markup</label>
+                                <div class="input-wrap"><input id="f-markup" type="number" step="1" min="0" class="input" wire:model.live.debounce.400ms="markup_percentage"><span class="unit">%</span></div>
+                            </div>
+                        </div>
+
+                        <label class="mold-toggle">
+                            <input type="checkbox" class="switch" wire:model.live="is_master_piece_required">
+                            <div style="flex:1">
+                                <strong>Master piece & rubber mold</strong>
+                                <span>Turn on for repeat production — adds 3D master print, vulcanised mold and wax injection.</span>
+                            </div>
+                            <span class="chip {{ $is_master_piece_required ? 'gold' : '' }}">{{ $is_master_piece_required ? 'Repeatable design' : 'One-off piece' }}</span>
+                        </label>
+                    </section>
+
+                    <!-- 2. Gemstones -->
+                    <section class="dlg-section">
+                        <div class="dlg-section-head">
+                            <div class="dlg-section-title">
+                                <span class="step-num">2</span>
+                                <div><h3>Gemstones</h3><p>Stone type, size, quantity and how it will be set.</p></div>
+                            </div>
+                            <button type="button" class="btn btn-sm" wire:click="addStoneRow"><i class="bi bi-plus-lg"></i> Add stone</button>
+                        </div>
+
+                        <div class="stone-rows">
+                            @forelse ($stones as $i => $stone)
+                                <div class="stone-row" wire:key="stone-row-{{ $i }}">
+                                    <div class="field"><label>Stone</label><input class="input input-sm" wire:model.blur="stones.{{ $i }}.stone_type" placeholder="Blue Sapphire"></div>
+                                    <div class="field"><label>Cut</label>
+                                        <select class="select select-sm" wire:model="stones.{{ $i }}.cut_shape">
+                                            @foreach (['Round Brilliant', 'Oval', 'Cushion', 'Princess', 'Emerald Cut', 'Pear', 'Marquise', 'Cabochon'] as $cut)
+                                                <option>{{ $cut }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="field"><label>Size (mm)</label><input class="input input-sm" wire:model="stones.{{ $i }}.dimensions_mm" placeholder="7x5"></div>
+                                    <div class="field"><label>Qty</label><input type="number" min="1" class="input input-sm" wire:model.live.debounce.400ms="stones.{{ $i }}.quantity"></div>
+                                    <div class="field"><label>Carat</label><input type="number" step="0.001" min="0" class="input input-sm" wire:model="stones.{{ $i }}.carat_weight"></div>
+                                    <div class="field"><label>Setting</label>
+                                        <select class="select select-sm" wire:model.live="stones.{{ $i }}.setting_method">
+                                            <option value="hand_prong">Hand · Prong</option>
+                                            <option value="bezel">Hand · Bezel</option>
+                                            <option value="pave">Pavé</option>
+                                            <option value="channel">Channel</option>
+                                            <option value="wax_cast">Wax set (cast-in-place)</option>
+                                        </select>
+                                    </div>
+                                    <div class="field"><label>Unit cost (Rs)</label><input type="number" min="0" class="input input-sm" wire:model.live.debounce.400ms="stones.{{ $i }}.stone_unit_cost"></div>
+                                    <button type="button" class="icon-btn danger" wire:click="removeStoneRow({{ $i }})" aria-label="Remove stone"><i class="bi bi-trash3"></i></button>
+                                </div>
+                            @empty
+                                <div class="notice"><i class="bi bi-info-circle"></i> Plain metal piece — no stones. Use “Add stone” if needed.</div>
+                            @endforelse
+                        </div>
+                    </section>
+
+                    <!-- 3. Stages -->
+                    <section class="dlg-section">
+                        <div class="dlg-section-head">
+                            <div class="dlg-section-title">
+                                <span class="step-num">3</span>
+                                <div><h3>Production stages</h3><p>Only the stages you keep selected will appear in this piece's lifecycle.</p></div>
+                            </div>
+                            <span class="chip gold tnum">{{ count(array_filter($selectedStages)) }} / 15 stages</span>
+                        </div>
+                        @error('selectedStages') <div class="notice red" style="margin-bottom:10px"><i class="bi bi-exclamation-triangle"></i> {{ $message }}</div> @enderror
+
+                        <div class="stage-picker">
+                            @foreach ($standardStages as $num => $meta)
+                                <label class="stage-pick" wire:key="pick-{{ $num }}">
+                                    <input type="checkbox" wire:model.live="selectedStages.{{ $num }}">
+                                    <span class="sp-num">{{ $num }}</span>
+                                    <span style="min-width:0;padding-right:20px">
+                                        <span class="sp-name" style="display:block">{{ $meta['name'] }}</span>
+                                        <span class="sp-desc">{{ $meta['description'] }}</span>
+                                        <span class="sp-role"><i class="bi bi-person"></i>{{ $meta['worker_role'] }}</span>
+                                    </span>
+                                    <span class="sp-tick"><i class="bi bi-check-lg"></i></span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </section>
+                </div>
+
+                <div class="dlg-foot">
+                    <div class="estimate">
+                        <div class="estimate-item"><span class="label">Metal</span><span class="money"><span class="cur">Rs</span>{{ $rs($this->estimate['metal']) }}</span></div>
+                        <div class="estimate-item"><span class="label">Stones</span><span class="money"><span class="cur">Rs</span>{{ $rs($this->estimate['stones']) }}</span></div>
+                        <div class="estimate-item"><span class="label">Base cost</span><span class="money gold"><span class="cur">Rs</span>{{ $rs($this->estimate['base']) }}</span></div>
+                        <div class="estimate-item"><span class="label">Est. MSRP</span><span class="money green"><span class="cur">Rs</span>{{ $rs($this->estimate['msrp']) }}</span></div>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button type="button" class="btn btn-ghost" wire:click="closeModal">Cancel</button>
+                        <button type="submit" class="btn btn-gold" wire:loading.attr="disabled" wire:target="createProduct">
+                            <span wire:loading.remove wire:target="createProduct"><i class="bi bi-rocket-takeoff"></i> Create & start lifecycle</span>
+                            <span wire:loading wire:target="createProduct">Creating…</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </dialog>
+    @endif
 </div>

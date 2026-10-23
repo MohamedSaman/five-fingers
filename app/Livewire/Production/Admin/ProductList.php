@@ -5,8 +5,8 @@ namespace App\Livewire\Production\Admin;
 use App\Models\ProductionProduct;
 use App\Models\ProductionStage;
 use App\Models\ProductionStone;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,10 +15,16 @@ class ProductList extends Component
     use WithPagination;
 
     // Filters
+    #[Url(as: 'q')]
     public $search = '';
+
+    #[Url(as: 'status')]
     public $statusFilter = '';
-    public $categoryFilter = '';
+
+    #[Url(as: 'metal')]
     public $metalFilter = '';
+
+    #[Url(as: 'stage')]
     public $stageFilter = '';
 
     // Modal state
@@ -29,71 +35,85 @@ class ProductList extends Component
     public $sku = '';
     public $category = 'Ring';
     public $metal_type = '18K Yellow Gold';
-    public $target_metal_weight = 8.50;
+    public $target_metal_weight = 7.5;
     public $metal_unit_price_per_g = 18500;
-    public $markup_percentage = 35.0;
+    public $markup_percentage = 35;
     public $is_master_piece_required = false;
     public $description = '';
 
-    // Dynamic Gemstone rows
+    // Dynamic gemstone rows
     public $stones = [];
 
-    // Stage Selection Checkboxes (keyed by step_number: 1..15)
+    // Stage selection checkboxes (keyed by step number 1..15)
     public $selectedStages = [];
 
     public function mount()
     {
-        $this->statusFilter = request()->get('status', '');
-        $this->stageFilter = request()->get('stage', '');
-
         $this->resetCreationForm();
+    }
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function setStatus($status)
+    {
+        $this->statusFilter = $status;
+        $this->resetPage();
     }
 
     public function resetCreationForm()
     {
-        // Generate automatic SKU
+        $this->resetErrorBag();
         $nextId = (ProductionProduct::max('id') ?? 0) + 1;
         $this->sku = 'FF-JOB-' . date('Y') . '-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
         $this->title = '';
         $this->category = 'Ring';
         $this->metal_type = '18K Yellow Gold';
-        $this->target_metal_weight = 7.50;
+        $this->target_metal_weight = 7.5;
         $this->metal_unit_price_per_g = 18500;
-        $this->markup_percentage = 35.0;
+        $this->markup_percentage = 35;
         $this->is_master_piece_required = false;
         $this->description = '';
 
-        // Default 1 gemstone row
-        $this->stones = [
-            [
-                'stone_type' => 'Blue Sapphire',
-                'cut_shape' => 'Oval',
-                'dimensions_mm' => '7x5 mm',
-                'quantity' => 1,
-                'carat_weight' => 2.15,
-                'setting_method' => 'hand_prong',
-                'stone_unit_cost' => 125000,
-            ]
-        ];
+        $this->stones = [[
+            'stone_type' => 'Blue Sapphire',
+            'cut_shape' => 'Oval',
+            'dimensions_mm' => '7x5',
+            'quantity' => 1,
+            'carat_weight' => 2.15,
+            'setting_method' => 'hand_prong',
+            'stone_unit_cost' => 125000,
+        ]];
 
-        // Initialize default stages based on master dictionary
         $this->selectedStages = [];
-        foreach (ProductionProduct::standardStages() as $stepNum => $stage) {
-            $this->selectedStages[$stepNum] = $stage['default_required'];
+        foreach (ProductionProduct::standardStages() as $num => $stage) {
+            $this->selectedStages[$num] = $stage['default_required'];
         }
     }
 
     public function updatedIsMasterPieceRequired($value)
     {
-        // If master piece is checked, automatically enable Step 2 (Master & Mold)
+        // Master piece => mold step + wax injection
         $this->selectedStages[2] = (bool) $value;
+        if ($value) {
+            $this->selectedStages[3] = true;
+        }
     }
 
     public function updatedMetalType($value)
     {
-        // If White Gold or Silver, automatically enable Step 14 (Rhodium Plating)
-        if (str_contains($value, 'White') || str_contains($value, 'Silver')) {
-            $this->selectedStages[14] = true;
+        // White gold / silver => rhodium plating
+        $this->selectedStages[14] = str_contains($value, 'White') || str_contains($value, 'Silver');
+    }
+
+    public function updatedStones()
+    {
+        // Wax-set stones => enable wax setting step automatically
+        $hasWax = collect($this->stones)->contains(fn ($s) => ($s['setting_method'] ?? '') === 'wax_cast');
+        if ($hasWax) {
+            $this->selectedStages[4] = true;
         }
     }
 
@@ -102,11 +122,11 @@ class ProductList extends Component
         $this->stones[] = [
             'stone_type' => 'Diamond',
             'cut_shape' => 'Round Brilliant',
-            'dimensions_mm' => '1.8 mm',
+            'dimensions_mm' => '1.5',
             'quantity' => 10,
-            'carat_weight' => 0.25,
-            'setting_method' => 'hand_prong',
-            'stone_unit_cost' => 45000,
+            'carat_weight' => 0.2,
+            'setting_method' => 'pave',
+            'stone_unit_cost' => 4500,
         ];
     }
 
@@ -127,6 +147,23 @@ class ProductList extends Component
         $this->showCreateModal = false;
     }
 
+    /**
+     * Live estimate shown in the creation dialog footer.
+     */
+    public function getEstimateProperty(): array
+    {
+        $metal = (float) $this->target_metal_weight * (float) $this->metal_unit_price_per_g;
+        $stones = collect($this->stones)->sum(fn ($s) => (float) ($s['stone_unit_cost'] ?? 0) * (int) ($s['quantity'] ?? 1));
+        $base = $metal + $stones;
+
+        return [
+            'metal' => $metal,
+            'stones' => $stones,
+            'base' => $base,
+            'msrp' => $base * (1 + ((float) $this->markup_percentage / 100)),
+        ];
+    }
+
     public function createProduct()
     {
         $this->validate([
@@ -134,12 +171,21 @@ class ProductList extends Component
             'title' => 'required|string|max:255',
             'category' => 'required|string',
             'metal_type' => 'required|string',
-            'target_metal_weight' => 'required|numeric|min:0.1',
+            'target_metal_weight' => 'required|numeric|min:0.001',
             'metal_unit_price_per_g' => 'required|numeric|min:0',
+            'markup_percentage' => 'nullable|numeric|min:0',
+        ], [], [
+            'title' => 'piece title',
+            'target_metal_weight' => 'target weight',
+            'metal_unit_price_per_g' => 'gold rate',
         ]);
 
-        DB::transaction(function () {
-            // 1. Create Product
+        if (count(array_filter($this->selectedStages)) === 0) {
+            $this->addError('selectedStages', 'Select at least one stage.');
+            return;
+        }
+
+        $product = DB::transaction(function () {
             $product = ProductionProduct::create([
                 'sku' => $this->sku,
                 'title' => $this->title,
@@ -149,98 +195,92 @@ class ProductList extends Component
                 'target_metal_weight' => $this->target_metal_weight,
                 'metal_unit_price_per_g' => $this->metal_unit_price_per_g,
                 'is_master_piece_required' => $this->is_master_piece_required,
-                'markup_percentage' => $this->markup_percentage,
+                'markup_percentage' => $this->markup_percentage ?: 0,
                 'status' => 'in_production',
                 'current_stage_number' => 1,
                 'created_by' => auth()->id(),
             ]);
 
-            // 2. Create Stones
             foreach ($this->stones as $stone) {
-                if (!empty($stone['stone_type'])) {
-                    ProductionStone::create([
-                        'production_product_id' => $product->id,
-                        'stone_type' => $stone['stone_type'],
-                        'cut_shape' => $stone['cut_shape'] ?? 'Round Brilliant',
-                        'dimensions_mm' => $stone['dimensions_mm'] ?? '',
-                        'quantity' => (int) ($stone['quantity'] ?? 1),
-                        'carat_weight' => (float) ($stone['carat_weight'] ?? 0),
-                        'setting_method' => $stone['setting_method'] ?? 'hand_prong',
-                        'stone_unit_cost' => (float) ($stone['stone_unit_cost'] ?? 0),
-                        'total_stone_cost' => (float) ($stone['stone_unit_cost'] ?? 0),
-                        'is_set' => false,
-                    ]);
+                if (empty($stone['stone_type'])) {
+                    continue;
+                }
+                $qty = max(1, (int) ($stone['quantity'] ?? 1));
+                $unit = (float) ($stone['stone_unit_cost'] ?? 0);
+                ProductionStone::create([
+                    'production_product_id' => $product->id,
+                    'stone_type' => $stone['stone_type'],
+                    'cut_shape' => $stone['cut_shape'] ?? 'Round Brilliant',
+                    'dimensions_mm' => $stone['dimensions_mm'] ?? '',
+                    'quantity' => $qty,
+                    'carat_weight' => (float) ($stone['carat_weight'] ?? 0),
+                    'setting_method' => $stone['setting_method'] ?? 'hand_prong',
+                    'stone_unit_cost' => $unit,
+                    'total_stone_cost' => $unit * $qty,
+                    'is_set' => false,
+                ]);
+            }
+
+            $first = true;
+            foreach (ProductionProduct::standardStages() as $num => $meta) {
+                if (empty($this->selectedStages[$num])) {
+                    continue;
+                }
+                ProductionStage::create([
+                    'production_product_id' => $product->id,
+                    'step_number' => $num,
+                    'step_name' => $meta['name'],
+                    'is_required' => true,
+                    'status' => $first ? 'in_progress' : 'pending',
+                    'started_at' => $first ? now() : null,
+                ]);
+                if ($first) {
+                    $product->update(['current_stage_number' => $num]);
+                    $first = false;
                 }
             }
 
-            // 3. Create only Selected Lifecycle Stages
-            $allStages = ProductionProduct::standardStages();
-            $firstStepActivated = false;
-
-            foreach ($allStages as $stepNum => $stageMeta) {
-                $isRequired = !empty($this->selectedStages[$stepNum]);
-                if ($isRequired) {
-                    $status = 'pending';
-                    $startedAt = null;
-
-                    // First active stage begins in_progress immediately
-                    if (!$firstStepActivated) {
-                        $status = 'in_progress';
-                        $startedAt = now();
-                        $firstStepActivated = true;
-                        $product->update(['current_stage_number' => $stepNum]);
-                    }
-
-                    ProductionStage::create([
-                        'production_product_id' => $product->id,
-                        'step_number' => $stepNum,
-                        'step_name' => $stageMeta['name'],
-                        'is_required' => true,
-                        'status' => $status,
-                        'started_at' => $startedAt,
-                    ]);
-                }
-            }
-
-            // 4. Initial cost recalculation
             $product->recalculateCosts();
 
-            // Redirect to 3-column lifecycle workspace
-            return redirect()->route('production.lifecycle', $product->id);
+            return $product;
         });
+
+        return $this->redirectRoute('production.lifecycle', ['id' => $product->id], navigate: false);
     }
 
     public function render()
     {
-        $query = ProductionProduct::with(['stages', 'stones', 'expenses', 'metalLogs']);
+        $query = ProductionProduct::with(['stages', 'stones']);
 
-        if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                  ->orWhere('sku', 'like', '%' . $this->search . '%')
-                  ->orWhere('category', 'like', '%' . $this->search . '%');
-            });
+        if ($this->search !== '') {
+            $s = '%' . $this->search . '%';
+            $query->where(fn ($q) => $q->where('title', 'like', $s)
+                ->orWhere('sku', 'like', $s)
+                ->orWhere('category', 'like', $s));
         }
-
-        if (!empty($this->statusFilter)) {
+        if ($this->statusFilter !== '') {
             $query->where('status', $this->statusFilter);
         }
-
-        if (!empty($this->metalFilter)) {
+        if ($this->metalFilter !== '') {
             $query->where('metal_type', $this->metalFilter);
         }
-
-        if (!empty($this->stageFilter)) {
-            $query->where('current_stage_number', $this->stageFilter);
+        if ($this->stageFilter !== '') {
+            $query->where('current_stage_number', $this->stageFilter)->where('status', 'in_production');
         }
 
-        $products = $query->orderBy('id', 'desc')->paginate(10);
+        $active = ProductionProduct::where('status', 'in_production');
 
         return view('livewire.production.admin.product-list', [
-            'products' => $products,
+            'products' => $query->orderByDesc('id')->paginate(10),
             'standardStages' => ProductionProduct::standardStages(),
-        ])->layout('components.layouts.production', [
-            'title' => 'Jewelry Manufacturing Jobs'
-        ]);
+            'kpi' => [
+                'active' => (clone $active)->count(),
+                'metal' => (float) (clone $active)->sum('target_metal_weight'),
+                'wip' => (float) (clone $active)->sum('total_manufacturing_cost'),
+                'qc' => ProductionProduct::where('status', 'qc_review')->count(),
+                'done' => ProductionProduct::where('status', 'completed')->count(),
+                'value' => (float) ProductionProduct::sum('recommended_selling_price'),
+            ],
+        ])->layout('components.layouts.production', ['title' => 'Jewellery Jobs']);
     }
 }
