@@ -780,6 +780,39 @@
                         <i class="bi bi-speedometer2"></i> <span>Overview</span>
                     </a>
                 </li>
+
+                {{-- Production Module Menu --}}
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('production.*') ? 'active' : '' }}" href="#productionSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('production.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-hammer"></i> <span>Production</span>
+                    </a>
+                    <div class="collapse {{ request()->routeIs('production.*') ? 'show' : '' }}" id="productionSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('production.admin.dashboard') ? 'active' : '' }}" href="{{ route('production.admin.dashboard') }}">
+                                    <i class="bi bi-speedometer"></i> <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('production.admin.batches') ? 'active' : '' }}" href="{{ route('production.admin.batches') }}">
+                                    <i class="bi bi-layers"></i> <span>Batches</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-2 {{ request()->routeIs('production.admin.materials') ? 'active' : '' }}" href="{{ route('production.admin.materials') }}">
+                                    <i class="bi bi-box-seam"></i> <span>Raw Materials</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                {{-- Live Website Store Link --}}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('website.home') }}" target="_blank">
+                        <i class="bi bi-shop-window text-warning"></i> <span class="text-warning">Online Store <i class="bi bi-box-arrow-up-right small"></i></span>
+                    </a>
+                </li>
                 {{--
                 <li class="nav-item">
                     <a class="nav-link dropdown-toggle" href="#hrSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="hrSubmenu">

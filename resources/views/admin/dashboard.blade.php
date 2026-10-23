@@ -1,5 +1,5 @@
 @extends('components.layouts.admin')
 
 @section('content')
-    @livewire('admin.admin-dashboard')
+    @livewire('inventory.admin.admin-dashboard')
 @endsection
