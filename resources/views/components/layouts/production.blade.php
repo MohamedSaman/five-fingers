@@ -34,6 +34,7 @@
     $section = match (true) {
         str_starts_with($routeName, 'production.expenses') => 'expenses',
         str_starts_with($routeName, 'production.vault') => 'vault',
+        str_starts_with($routeName, 'production.hr') => 'hr',
         default => 'products',
     };
     $qStatus = request('status');
@@ -69,6 +70,9 @@
             </a>
             <a href="{{ route('production.vault') }}" class="{{ $section === 'vault' ? 'is-active' : '' }}">
                 <i class="bi bi-safe2"></i><span>Purchasing</span>
+            </a>
+            <a href="{{ route('production.hr.staff') }}" class="{{ $section === 'hr' ? 'is-active' : '' }}">
+                <i class="bi bi-people"></i><span>HR Management</span>
             </a>
         </nav>
 
@@ -154,11 +158,36 @@
                     <a href="{{ route('production.expenses', ['type' => 'consumable']) }}" class="pd-side-link {{ $qType === 'consumable' ? 'is-active' : '' }}"><i class="bi bi-droplet"></i> Consumables</a>
                     <a href="{{ route('production.expenses', ['type' => 'metal_loss']) }}" class="pd-side-link {{ $qType === 'metal_loss' ? 'is-active' : '' }}"><i class="bi bi-graph-down-arrow"></i> Metal loss</a>
 
-                @else
+                @elseif($section === 'vault')
                     <div class="pd-side-label">Vault</div>
                     <a href="{{ route('production.vault', ['tab' => 'bullion']) }}" class="pd-side-link {{ $qTab === 'bullion' ? 'is-active' : '' }}"><i class="bi bi-coin"></i> Bullion</a>
                     <a href="{{ route('production.vault', ['tab' => 'stones']) }}" class="pd-side-link {{ $qTab === 'stones' ? 'is-active' : '' }}"><i class="bi bi-gem"></i> Gemstones</a>
                     <a href="{{ route('production.vault', ['tab' => 'finished']) }}" class="pd-side-link {{ $qTab === 'finished' ? 'is-active' : '' }}"><i class="bi bi-box2-heart"></i> Finished pieces</a>
+
+                @elseif($section === 'hr')
+                    @php
+                        $cStaff = \App\Models\User::where('role', 'staff')->count();
+                        $cAttToday = \App\Models\Attendance::whereDate('date', now()->toDateString())->where('status', 'present')->count();
+                        $cSalPending = \App\Models\Salary::where('payment_status', 'pending')->count();
+                    @endphp
+                    <div class="pd-side-label">HR Management</div>
+                    <a href="{{ route('production.hr.staff') }}" class="pd-side-link {{ request()->routeIs('production.hr.staff*') ? 'is-active' : '' }}">
+                        <i class="bi bi-people"></i> Staff & Artisans <span class="count">{{ $cStaff }}</span>
+                    </a>
+                    <a href="{{ route('production.hr.salary') }}" class="pd-side-link {{ request()->routeIs('production.hr.salary*') ? 'is-active' : '' }}">
+                        <i class="bi bi-cash-stack"></i> Salary & Payroll <span class="count">{{ $cSalPending }}</span>
+                    </a>
+                    <a href="{{ route('production.hr.attendance') }}" class="pd-side-link {{ request()->routeIs('production.hr.attendance*') ? 'is-active' : '' }}">
+                        <i class="bi bi-calendar-check"></i> Attendance <span class="count">{{ $cAttToday }}</span>
+                    </a>
+
+                    <div class="pd-side-label" style="margin-top:14px">Quick Bench Actions</div>
+                    <a href="{{ route('production.hr.attendance') }}" class="pd-side-link" style="color:var(--gold)">
+                        <i class="bi bi-clock"></i> Daily Timecard
+                    </a>
+                    <a href="{{ route('production.hr.salary') }}" class="pd-side-link" style="color:var(--green)">
+                        <i class="bi bi-calculator"></i> Run Payroll
+                    </a>
                 @endif
 
                 <div class="pd-side-foot">

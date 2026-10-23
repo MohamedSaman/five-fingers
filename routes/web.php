@@ -486,6 +486,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/product/{id}', \App\Livewire\Production\Admin\ProductLifecycle::class)->name('lifecycle');
         Route::get('/expenses', \App\Livewire\Production\Admin\ExpensesList::class)->name('expenses');
         Route::get('/vault', \App\Livewire\Production\Admin\VaultStock::class)->name('vault');
+
+        // HR Management (Staff, Salary, Attendance)
+        Route::prefix('hr')->name('hr.')->group(function () {
+            Route::get('/staff', \App\Livewire\Production\Admin\HR\StaffManagement::class)->name('staff');
+            Route::get('/salary', \App\Livewire\Production\Admin\HR\SalaryManagement::class)->name('salary');
+            Route::get('/attendance', \App\Livewire\Production\Admin\HR\AttendanceManagement::class)->name('attendance');
+        });
     });
 });
 
