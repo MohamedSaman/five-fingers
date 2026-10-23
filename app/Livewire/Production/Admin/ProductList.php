@@ -9,10 +9,16 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 
 class ProductList extends Component
 {
     use WithPagination;
+    use WithFileUploads;
+
+    // Design Image
+    public $design_image;
+    public $image_url = '';
 
     // Filters
     #[Url(as: 'q')]
@@ -76,6 +82,8 @@ class ProductList extends Component
         $this->markup_percentage = 35;
         $this->is_master_piece_required = false;
         $this->description = '';
+        $this->design_image = null;
+        $this->image_url = '';
 
         $this->stones = [[
             'stone_type' => 'Blue Sapphire',
@@ -87,10 +95,17 @@ class ProductList extends Component
             'stone_unit_cost' => 125000,
         ]];
 
+
         $this->selectedStages = [];
         foreach (ProductionProduct::standardStages() as $num => $stage) {
             $this->selectedStages[$num] = $stage['default_required'];
         }
+    }
+
+    public function removeDesignImage()
+    {
+        $this->design_image = null;
+        $this->image_url = '';
     }
 
     public function updatedIsMasterPieceRequired($value)
@@ -174,10 +189,12 @@ class ProductList extends Component
             'target_metal_weight' => 'required|numeric|min:0.001',
             'metal_unit_price_per_g' => 'required|numeric|min:0',
             'markup_percentage' => 'nullable|numeric|min:0',
+            'design_image' => 'nullable|image|max:8192',
         ], [], [
             'title' => 'piece title',
             'target_metal_weight' => 'target weight',
             'metal_unit_price_per_g' => 'gold rate',
+            'design_image' => 'design image',
         ]);
 
         if (count(array_filter($this->selectedStages)) === 0) {
@@ -185,7 +202,16 @@ class ProductList extends Component
             return;
         }
 
-        $product = DB::transaction(function () {
+        // Store design image if uploaded
+        $finalImageUrl = null;
+        if ($this->design_image) {
+            $path = $this->design_image->store('production/designs', 'public');
+            $finalImageUrl = '/storage/' . $path;
+        } elseif (!empty($this->image_url)) {
+            $finalImageUrl = $this->image_url;
+        }
+
+        $product = DB::transaction(function () use ($finalImageUrl) {
             $product = ProductionProduct::create([
                 'sku' => $this->sku,
                 'title' => $this->title,
@@ -195,6 +221,7 @@ class ProductList extends Component
                 'target_metal_weight' => $this->target_metal_weight,
                 'metal_unit_price_per_g' => $this->metal_unit_price_per_g,
                 'is_master_piece_required' => $this->is_master_piece_required,
+                'image_url' => $finalImageUrl,
                 'markup_percentage' => $this->markup_percentage ?: 0,
                 'status' => 'in_production',
                 'current_stage_number' => 1,

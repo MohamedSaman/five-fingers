@@ -46,9 +46,13 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
 
-            <div class="job-thumb {{ $metalTone($product->metal_type) }}" style="width:52px;height:52px;font-size:24px">
-                <i class="bi {{ $catIcons[$product->category] ?? 'bi-gem' }}"></i>
-            </div>
+            @if ($product->image_url)
+                <img src="{{ asset($product->image_url) }}" alt="{{ $product->title }}" class="hero-thumb-img">
+            @else
+                <div class="job-thumb {{ $metalTone($product->metal_type) }}" style="width:52px;height:52px;font-size:24px">
+                    <i class="bi {{ $catIcons[$product->category] ?? 'bi-gem' }}"></i>
+                </div>
+            @endif
 
             <div style="min-width:0">
                 <div class="lc-chips">
@@ -201,6 +205,50 @@
                             @endif
                         </div>
                     </div>
+                </div>
+
+                <!-- 3D CAD Blueprint / Design Visualizer Card -->
+                <div class="blueprint-card">
+                    <div class="blueprint-img-wrap">
+                        @if ($product->image_url)
+                            <img src="{{ asset($product->image_url) }}" alt="3D CAD Blueprint - {{ $product->title }}">
+                        @else
+                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center;color:var(--text-dim);gap:8px">
+                                <i class="bi bi-camera" style="font-size:30px;color:var(--gold-soft)"></i>
+                                <span style="font-size:13px;font-weight:600;color:var(--text-muted)">No 3D render or bench photo uploaded</span>
+                                <span style="font-size:11px">Upload a CAD render, wax snapshot or finished photo for visual verification</span>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="blueprint-bar">
+                        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text)">
+                            <i class="bi bi-layers-half" style="color:var(--gold)"></i>
+                            <span>Design Blueprint</span>
+                            @if ($product->image_url)
+                                <span class="chip gold" style="height:18px;font-size:10px;padding:0 6px">Verified CAD</span>
+                            @endif
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <label class="btn btn-ghost btn-sm" style="cursor:pointer;position:relative;margin:0">
+                                <input type="file" wire:model="new_design_image" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                <span>{{ $product->image_url ? 'Replace' : 'Upload' }}</span>
+                            </label>
+                            @if ($product->image_url)
+                                <button type="button" class="btn btn-ghost btn-sm" wire:click="removeDesignImage" title="Remove image" style="color:var(--rose);padding:0 8px">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                    <div wire:loading wire:target="new_design_image" style="padding:6px 14px;background:rgba(217,180,90,0.1);font-size:11px;color:var(--gold);display:flex;align-items:center;gap:6px">
+                        <i class="bi bi-arrow-repeat spin"></i> Uploading design blueprint…
+                    </div>
+                    @error('new_design_image')
+                        <div style="padding:6px 14px;background:rgba(244,63,94,0.1);font-size:11px;color:var(--rose)">
+                            {{ $message }}
+                        </div>
+                    @enderror
                 </div>
 
                 <!-- Specifications Tiles -->

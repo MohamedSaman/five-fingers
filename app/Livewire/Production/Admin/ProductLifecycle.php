@@ -10,11 +10,17 @@ use App\Models\StageMetalLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ProductLifecycle extends Component
 {
+    use WithFileUploads;
+
     public $productId;
     public $selectedStageId;
+
+    // Design Image upload
+    public $new_design_image;
 
     // Right-panel inputs
     public $assigned_user_id = '';
@@ -252,6 +258,32 @@ class ProductLifecycle extends Component
         $stage->update(['status' => 'in_progress', 'started_at' => $stage->started_at ?? now()]);
         ProductionProduct::whereKey($this->productId)->update(['status' => 'in_production', 'current_stage_number' => $stage->step_number]);
         $this->dispatch('toast', type: 'success', message: "Rework started on {$stage->step_name}");
+    }
+
+    public function updatedNewDesignImage()
+    {
+        $this->validate([
+            'new_design_image' => 'required|image|max:8192',
+        ], [], [
+            'new_design_image' => 'design blueprint image',
+        ]);
+
+        $product = ProductionProduct::findOrFail($this->productId);
+        $path = $this->new_design_image->store('production/designs', 'public');
+        $product->update([
+            'image_url' => '/storage/' . $path,
+        ]);
+
+        $this->new_design_image = null;
+        $this->dispatch('toast', type: 'success', message: 'Design blueprint updated successfully!');
+    }
+
+    public function removeDesignImage()
+    {
+        $product = ProductionProduct::findOrFail($this->productId);
+        $product->update(['image_url' => null]);
+        $this->new_design_image = null;
+        $this->dispatch('toast', type: 'info', message: 'Design blueprint removed.');
     }
 
     public function render()

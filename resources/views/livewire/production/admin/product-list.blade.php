@@ -97,7 +97,11 @@
                         <tr class="row-link" wire:key="job-{{ $product->id }}" onclick="window.location='{{ route('production.lifecycle', $product->id) }}'">
                             <th scope="row">
                                 <div class="job">
-                                    <div class="job-thumb {{ $metalTone($product->metal_type) }}"><i class="bi {{ $catIcons[$product->category] ?? 'bi-gem' }}"></i></div>
+                                    @if ($product->image_url)
+                                        <img src="{{ asset($product->image_url) }}" alt="{{ $product->title }}" class="job-thumb-img">
+                                    @else
+                                        <div class="job-thumb {{ $metalTone($product->metal_type) }}"><i class="bi {{ $catIcons[$product->category] ?? 'bi-gem' }}"></i></div>
+                                    @endif
                                     <div style="min-width:0">
                                         <div class="job-title">{{ $product->title }}</div>
                                         <div class="job-meta">
@@ -233,6 +237,37 @@
                                 <label for="f-markup">Markup</label>
                                 <div class="input-wrap"><input id="f-markup" type="number" step="1" min="0" class="input" wire:model.live.debounce.400ms="markup_percentage"><span class="unit">%</span></div>
                             </div>
+                        </div>
+
+                        <div class="field" style="margin-top:14px">
+                            <label>Design blueprint / 3D CAD render <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:normal">(optional · PNG, JPG, WEBP up to 8MB)</span></label>
+                            @if ($design_image)
+                                <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--panel-2);border:1px solid var(--gold-line);border-radius:var(--r-md)">
+                                    <img src="{{ $design_image->temporaryUrl() }}" style="width:58px;height:58px;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--line)" alt="Preview">
+                                    <div style="flex:1;min-width:0">
+                                        <div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $design_image->getClientOriginalName() }}</div>
+                                        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">{{ number_format($design_image->getSize() / 1024, 1) }} KB · Ready to attach</div>
+                                    </div>
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="removeDesignImage" style="color:var(--rose)">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </div>
+                            @else
+                                <label class="design-dropzone" style="padding:16px 20px">
+                                    <input type="file" wire:model="design_image" accept="image/*">
+                                    <div class="drop-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                                    <div style="font-size:13px;font-weight:600;color:var(--text)">
+                                        Drop CAD render or sketch photo here, or <span style="color:var(--gold);text-decoration:underline">browse</span>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--text-dim)">
+                                        High-resolution ring/pendant 3D model screenshot or bench sketch
+                                    </div>
+                                </label>
+                            @endif
+                            <div wire:loading wire:target="design_image" style="font-size:12px;color:var(--gold);margin-top:6px">
+                                <i class="bi bi-arrow-repeat spin"></i> Uploading design preview…
+                            </div>
+                            @error('design_image') <span class="error">{{ $message }}</span> @enderror
                         </div>
 
                         <label class="mold-toggle">

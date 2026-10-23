@@ -2317,7 +2317,8 @@ input[type="number"].input {
 
 @media (max-width: 1400px) {
     .lc-grid {
-        grid-template-columns: 280px minmax(0, 1fr) 360px;
+        grid-template-columns: 270px minmax(0, 1fr) 350px;
+        gap: 16px;
     }
 
     .tiles {
@@ -2325,7 +2326,12 @@ input[type="number"].input {
     }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1180px) {
+    .lc-grid {
+        grid-template-columns: 240px minmax(0, 1fr) 310px;
+        gap: 14px;
+    }
+
     .kpis {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -2347,7 +2353,7 @@ input[type="number"].input {
     }
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 960px) {
     body.pd {
         overflow: auto;
     }
@@ -2363,6 +2369,7 @@ input[type="number"].input {
 
     .lc-grid {
         grid-template-columns: 1fr;
+        height: auto;
     }
 
     .lc-col-body {
@@ -2383,3 +2390,336 @@ input[type="number"].input {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES (Champagne Ivory & Polished Gold)
+   ========================================================================== */
+
+[data-theme="light"] {
+    color-scheme: light;
+
+    /* Surfaces */
+    --bg: #f6f7fb;
+    --bg-elev: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f8f9fd;
+    --panel-3: #eff2f8;
+    --glass: rgba(255, 255, 255, 0.92);
+
+    /* Lines */
+    --line: rgba(15, 23, 42, 0.07);
+    --line-2: rgba(15, 23, 42, 0.12);
+    --line-3: rgba(15, 23, 42, 0.2);
+
+    /* Text */
+    --text: #0f172a;
+    --text-2: #475569;
+    --text-3: #64748b;
+
+    /* Brand gold */
+    --gold: #b38827;
+    --gold-hi: #876212;
+    --gold-lo: #5c420b;
+    --gold-soft: rgba(179, 136, 39, 0.1);
+    --gold-line: rgba(179, 136, 39, 0.32);
+    --gold-grad: linear-gradient(135deg, #e5b955 0%, #b38827 50%, #876212 100%);
+
+    /* Status */
+    --green: #15803d;
+    --green-soft: rgba(21, 128, 61, 0.1);
+    --amber: #b45309;
+    --amber-soft: rgba(180, 83, 9, 0.1);
+    --red: #be123c;
+    --red-soft: rgba(190, 18, 60, 0.1);
+    --blue: #0369a1;
+    --blue-soft: rgba(3, 105, 161, 0.1);
+    --violet: #6d28d9;
+    --violet-soft: rgba(109, 40, 217, 0.1);
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 16px 36px -12px rgba(15, 23, 42, 0.08);
+    --shadow-gold: 0 10px 24px -8px rgba(179, 136, 39, 0.45);
+}
+
+[data-theme="light"] body.pd::before {
+    background:
+        radial-gradient(900px 520px at 8% -12%, rgba(179, 136, 39, 0.09), transparent 60%),
+        radial-gradient(760px 480px at 105% -5%, rgba(3, 105, 161, 0.05), transparent 60%);
+}
+
+[data-theme="light"] .pd-top {
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom-color: var(--line);
+    box-shadow: 0 2px 12px -4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .pd-side {
+    background: #ffffff;
+    border-right-color: var(--line);
+}
+
+[data-theme="light"] .pd-seg {
+    background: #edf0f6;
+    border-color: var(--line);
+}
+
+[data-theme="light"] .pd-seg a {
+    color: var(--text-2);
+}
+
+[data-theme="light"] .pd-seg a:hover {
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .pd-seg a.is-active {
+    color: #ffffff;
+    background: var(--gold-grad);
+}
+
+[data-theme="light"] .filter-tabs {
+    background: #edf0f6;
+    border-color: var(--line);
+}
+
+[data-theme="light"] .filter-tabs button {
+    color: var(--text-2);
+}
+
+[data-theme="light"] .filter-tabs button.is-active {
+    background: #ffffff;
+    color: var(--text);
+    box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .input,
+[data-theme="light"] .select,
+[data-theme="light"] .textarea {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.15);
+    color: var(--text);
+}
+
+[data-theme="light"] .input:focus,
+[data-theme="light"] .select:focus,
+[data-theme="light"] .textarea:focus {
+    background: #ffffff;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(179, 136, 39, 0.16);
+}
+
+[data-theme="light"] .select option {
+    background: #ffffff;
+    color: var(--text);
+}
+
+[data-theme="light"] .card {
+    background: #ffffff;
+    border-color: var(--line);
+}
+
+[data-theme="light"] .tile,
+[data-theme="light"] .gem,
+[data-theme="light"] .check,
+[data-theme="light"] .group,
+[data-theme="light"] .dlg-section,
+[data-theme="light"] .stone-row,
+[data-theme="light"] .stage-pick,
+[data-theme="light"] .mold-toggle,
+[data-theme="light"] .lc-col-foot,
+[data-theme="light"] .pd-menu {
+    background: #f8f9fd;
+    border-color: var(--line);
+}
+
+[data-theme="light"] .btn {
+    background: #ffffff;
+    color: var(--text);
+    border-color: var(--line-2);
+}
+
+[data-theme="light"] .btn:hover {
+    background: #f1f4f9;
+    border-color: var(--line-3);
+}
+
+[data-theme="light"] .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-2);
+}
+
+[data-theme="light"] .btn-gold {
+    color: #ffffff;
+    background: var(--gold-grad);
+}
+
+[data-theme="light"] .icon-btn {
+    background: #ffffff;
+    border-color: var(--line-2);
+    color: var(--text-2);
+}
+
+[data-theme="light"] .tbl thead th {
+    background: #f1f4f9;
+    border-bottom-color: var(--line);
+    color: var(--text-2);
+}
+
+[data-theme="light"] .tbl tbody tr:hover {
+    background: rgba(15, 23, 42, 0.02);
+}
+
+[data-theme="light"] .pd-dialog {
+    background: #ffffff;
+    color: var(--text);
+}
+
+[data-theme="light"] .pd-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+}
+
+[data-theme="light"] .stage-hero {
+    background: radial-gradient(500px 200px at 0% 0%, rgba(179, 136, 39, 0.12), transparent 70%), #f8f9fd;
+    border-color: var(--gold-line);
+}
+
+[data-theme="light"] .tl-node {
+    background: #ffffff;
+    border-color: var(--line-2);
+    color: var(--text-3);
+}
+
+[data-theme="light"] .tl-step.is-selected {
+    background: linear-gradient(90deg, rgba(179, 136, 39, 0.12), rgba(179, 136, 39, 0.02));
+    border-color: var(--gold-line);
+}
+
+[data-theme="light"] .chip {
+    background: #f1f4f9;
+    border-color: var(--line);
+    color: var(--text-2);
+}
+
+[data-theme="light"] .chip.mono-chip {
+    color: var(--text);
+}
+
+/* ==========================================================================
+   DESIGN IMAGES & MEDIA COMPONENTS
+   ========================================================================== */
+
+.job-thumb-img {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid var(--gold-line);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    background: #000;
+}
+
+.hero-thumb-img {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 1.5px solid var(--gold-line);
+    box-shadow: var(--shadow-gold);
+    background: #000;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease);
+}
+
+.hero-thumb-img:hover {
+    transform: scale(1.05);
+}
+
+/* Upload dropzone in creation modal & lifecycle */
+.design-dropzone {
+    position: relative;
+    border: 2px dashed var(--gold-line);
+    border-radius: var(--r-lg);
+    padding: 20px;
+    text-align: center;
+    background: rgba(217, 180, 90, 0.03);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.design-dropzone:hover {
+    border-color: var(--gold);
+    background: rgba(217, 180, 90, 0.07);
+}
+
+.design-dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.design-dropzone .drop-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    color: var(--gold);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-line);
+}
+
+/* Blueprint design image card in lifecycle middle column */
+.blueprint-card {
+    border-radius: var(--r-lg);
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.blueprint-img-wrap {
+    position: relative;
+    width: 100%;
+    max-height: 260px;
+    overflow: hidden;
+    background: #0a0b0e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blueprint-img-wrap img {
+    max-height: 260px;
+    width: 100%;
+    object-fit: contain;
+    transition: transform 0.35s var(--ease);
+}
+
+.blueprint-img-wrap:hover img {
+    transform: scale(1.03);
+}
+
+.blueprint-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .blueprint-bar {
+    background: #f1f4f9;
+}
+

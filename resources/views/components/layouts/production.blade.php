@@ -9,6 +9,15 @@
     <title>{{ $title ?? 'Production' }} · Five Fingers</title>
     <link rel="icon" type="image/png" href="{{ asset('images/five-fingers-logo.png') }}">
 
+    <meta name="color-scheme" content="dark light">
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('production-theme');
+            var theme = savedTheme ? savedTheme : 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,7 +41,14 @@
     $qTab = request('tab', 'bullion');
 @endphp
 
-<body class="pd">
+<body class="pd" x-data="{
+    theme: document.documentElement.getAttribute('data-theme') || 'dark',
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', this.theme);
+        localStorage.setItem('production-theme', this.theme);
+    }
+}">
 
     <!-- ============ TOP BAR ============ -->
     <header class="pd-top">
@@ -63,6 +79,15 @@
                 <span class="sep"></span>
                 <span>18K <b class="tnum">Rs 18,375</b>/g</span>
             </div>
+
+            <!-- Theme Toggle Button -->
+            <button type="button" class="icon-btn" id="btn-theme-toggle"
+                    @click="toggleTheme()"
+                    :title="theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'"
+                    aria-label="Toggle color theme">
+                <i class="bi" :class="theme === 'dark' ? 'bi-sun' : 'bi-moon-stars'"
+                   :style="theme === 'dark' ? 'color: var(--gold)' : 'color: var(--blue)'"></i>
+            </button>
 
             <a href="{{ route('admin.dashboard') }}" class="btn btn-sm" title="Switch to Inventory & Sales">
                 <i class="bi bi-arrow-left-right"></i> Inventory
