@@ -477,5 +477,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             'historyTab' => 'sales'
         ]);
     })->name('test.product-history');
+
+    // ==========================================
+    // JEWELRY MANUFACTURING & PRODUCTION MODULE
+    // ==========================================
+    Route::prefix('production')->name('production.')->group(function () {
+        Route::get('/products', \App\Livewire\Production\Admin\ProductList::class)->name('products');
+        Route::get('/product/{id}', \App\Livewire\Production\Admin\ProductLifecycle::class)->name('lifecycle');
+        Route::get('/expenses', \App\Livewire\Production\Admin\ExpensesList::class)->name('expenses');
+        Route::get('/vault', \App\Livewire\Production\Admin\VaultStock::class)->name('vault');
+    });
 });
+
 

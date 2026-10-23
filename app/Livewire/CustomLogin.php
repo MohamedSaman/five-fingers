@@ -51,12 +51,8 @@ class CustomLogin extends Component
 
             // Redirect based on selected module & role
             if ($this->selectedModule === 'production') {
-                session()->flash('status', 'Logged into Production Module');
-                if ($user->role === 'admin') {
-                    return redirect()->route('admin.dashboard');
-                } else {
-                    return redirect()->route('staff.dashboard');
-                }
+                session()->flash('status', 'Logged into Jewelry Production Module');
+                return redirect()->route('production.products');
             } else {
                 // Inventory module
                 if ($user->role === 'admin') {
