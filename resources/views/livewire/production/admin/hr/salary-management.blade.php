@@ -19,7 +19,7 @@
         </div>
         <div class="page-actions">
             <button type="button" class="btn btn-gold" wire:click="generateMonthlyPayroll">
-                <i class="bi bi-calculator"></i> Generate Payroll for {{ $months[$selectedMonth] }} {{ $selectedYear }}
+                <i class="bi bi-calculator"></i> Run Payroll for {{ $months[$selectedMonth] }} {{ $selectedYear }}
             </button>
         </div>
     </header>
@@ -63,126 +63,132 @@
         </article>
     </section>
 
-    <!-- Toolbar Filters -->
-    <div class="toolbar card" style="margin-bottom:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:280px;flex-wrap:wrap">
-            <select class="select" wire:model.live="selectedMonth" style="width:140px">
+    <!-- Payroll Table Section -->
+    <section class="card">
+        <div class="toolbar">
+            <div class="search">
+                <i class="bi bi-search"></i>
+                <input type="search" class="input" placeholder="Search artisan by name…" wire:model.live.debounce.300ms="search" aria-label="Search payroll">
+            </div>
+
+            <select class="select" wire:model.live="selectedMonth" style="width:auto;min-width:140px" aria-label="Select month">
                 @foreach ($months as $num => $m)
                     <option value="{{ $num }}">{{ $m }}</option>
                 @endforeach
             </select>
-            <select class="select" wire:model.live="selectedYear" style="width:110px">
+
+            <select class="select" wire:model.live="selectedYear" style="width:auto;min-width:100px" aria-label="Select year">
                 @foreach ([2024, 2025, 2026, 2027] as $y)
                     <option value="{{ $y }}">{{ $y }}</option>
                 @endforeach
             </select>
-            <select class="select" wire:model.live="statusFilter" style="width:140px">
-                <option value="">All Statuses</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-            </select>
-            <div class="input-wrap prefix" style="flex:1;min-width:200px">
-                <span class="unit"><i class="bi bi-search"></i></span>
-                <input type="search" class="input" wire:model.live.debounce.300ms="search" placeholder="Search artisan by name…">
+
+            <div class="filter-tabs" role="tablist" aria-label="Payment status filter">
+                <button type="button" class="{{ $statusFilter === '' ? 'is-active' : '' }}" wire:click="$set('statusFilter', '')">All</button>
+                <button type="button" class="{{ $statusFilter === 'paid' ? 'is-active' : '' }}" wire:click="$set('statusFilter', 'paid')">Paid</button>
+                <button type="button" class="{{ $statusFilter === 'pending' ? 'is-active' : '' }}" wire:click="$set('statusFilter', 'pending')">Pending</button>
             </div>
         </div>
-    </div>
 
-    <!-- Table -->
-    <div class="table-card">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th style="min-width:220px">Artisan</th>
-                    <th>Basic Salary</th>
-                    <th>Bonus & Allowance</th>
-                    <th>Overtime</th>
-                    <th>Deductions</th>
-                    <th>Net Salary</th>
-                    <th>Status</th>
-                    <th style="text-align:right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($salaries as $sal)
-                    @php
-                        $user = $sal->user;
-                        $detail = $user?->userDetail;
-                        $isPaid = $sal->payment_status === 'paid';
-                    @endphp
-                    <tr wire:key="sal-{{ $sal->salary_id }}">
-                        <td>
-                            <div style="display:flex;align-items:center;gap:12px">
-                                <div class="avatar" style="width:38px;height:38px;font-size:14px;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold-line);border-radius:10px;display:grid;place-items:center;font-weight:700">
-                                    {{ strtoupper(substr($user?->name ?? 'A', 0, 1)) }}
-                                </div>
-                                <div style="min-width:0">
-                                    <div style="font-weight:700;color:var(--text)">{{ $user?->name ?? 'Artisan' }}</div>
-                                    <div style="font-size:11.5px;color:var(--text-dim)">{{ $detail?->work_role ?? 'Artisan' }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="tnum" style="font-size:13px;color:var(--text)">Rs {{ $rs($sal->basic_salary) }}</span>
-                        </td>
-                        <td>
-                            <span class="tnum" style="font-size:12.5px;color:var(--green)">
-                                +Rs {{ $rs($sal->bonus + $sal->allowance) }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="tnum" style="font-size:12.5px;color:var(--violet)">
-                                +Rs {{ $rs($sal->overtime) }}
-                            </div>
-                            @if ($sal->overtime_hours > 0)
-                                <div style="font-size:10.5px;color:var(--text-dim)">{{ $sal->overtime_hours }} hrs</div>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="tnum" style="font-size:12.5px;color:var(--rose)">
-                                -Rs {{ $rs($sal->deductions) }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="money gold" style="font-size:14px">
-                                <span class="cur">Rs</span>{{ $rs($sal->net_salary) }}
-                            </div>
-                        </td>
-                        <td>
-                            <button type="button" class="chip {{ $isPaid ? 'green' : 'amber' }}" wire:click="togglePaymentStatus({{ $sal->salary_id }})" title="Click to toggle status" style="cursor:pointer;border:none">
-                                <span class="dot"></span>{{ $isPaid ? 'Paid' : 'Pending' }}
-                            </button>
-                        </td>
-                        <td style="text-align:right">
-                            <div style="display:inline-flex;gap:6px">
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="viewPayslip({{ $sal->salary_id }})" title="View Official Payslip">
-                                    <i class="bi bi-file-earmark-text"></i> Payslip
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="editSalary({{ $sal->salary_id }})" title="Adjust Salary / Bonuses">
-                                    <i class="bi bi-sliders"></i>
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="deleteSalary({{ $sal->salary_id }})" wire:confirm="Delete this payroll record?" title="Delete" style="color:var(--rose)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
+        <div class="table-wrap" tabindex="0">
+            <table class="tbl">
+                <thead>
                     <tr>
-                        <td colspan="8" style="text-align:center;padding:48px 20px;color:var(--text-dim)">
-                            <i class="bi bi-cash-stack" style="font-size:32px;display:block;margin-bottom:8px;opacity:.5"></i>
-                            No salary records found for {{ $months[$selectedMonth] }} {{ $selectedYear }}.
-                            <div style="margin-top:10px">
-                                <button type="button" class="btn btn-sm btn-gold" wire:click="generateMonthlyPayroll">
-                                    <i class="bi bi-calculator"></i> Generate Payroll
-                                </button>
-                            </div>
-                        </td>
+                        <th scope="col" style="min-width:260px">Artisan</th>
+                        <th scope="col" class="r">Basic Salary</th>
+                        <th scope="col" class="r">Bonus & Allow.</th>
+                        <th scope="col" class="r">Overtime</th>
+                        <th scope="col" class="r">Deductions</th>
+                        <th scope="col" class="r">Net Salary</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="r">Actions</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @forelse ($salaries as $sal)
+                        @php
+                            $user = $sal->user;
+                            $detail = $user?->userDetail;
+                            $isPaid = $sal->payment_status === 'paid';
+                        @endphp
+                        <tr wire:key="sal-{{ $sal->salary_id }}">
+                            <th scope="row">
+                                <div class="job">
+                                    <div class="job-thumb gold" style="font-size:18px">
+                                        <i class="bi bi-wallet2"></i>
+                                    </div>
+                                    <div style="min-width:0">
+                                        <div class="job-title">{{ $user?->name ?? 'Artisan' }}</div>
+                                        <div class="job-meta">
+                                            <span>{{ $detail?->work_role ?? 'Artisan' }}</span>
+                                            <span>·</span>
+                                            <span>{{ $detail?->department ?? 'Atelier' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <td class="r">
+                                <span class="tnum" style="font-size:13px;color:var(--text)">Rs {{ $rs($sal->basic_salary) }}</span>
+                            </td>
+                            <td class="r">
+                                <span class="tnum" style="font-size:12.5px;color:var(--green)">
+                                    +Rs {{ $rs($sal->bonus + $sal->allowance) }}
+                                </span>
+                            </td>
+                            <td class="r">
+                                <div class="tnum" style="font-size:12.5px;color:var(--violet)">
+                                    +Rs {{ $rs($sal->overtime) }}
+                                </div>
+                                @if ($sal->overtime_hours > 0)
+                                    <div style="font-size:10.5px;color:var(--text-3)">{{ $sal->overtime_hours }} hrs</div>
+                                @endif
+                            </td>
+                            <td class="r">
+                                <span class="tnum" style="font-size:12.5px;color:var(--rose)">
+                                    -Rs {{ $rs($sal->deductions) }}
+                                </span>
+                            </td>
+                            <td class="r">
+                                <div class="money gold" style="font-size:14.5px">
+                                    <span class="cur">Rs</span>{{ $rs($sal->net_salary) }}
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="chip {{ $isPaid ? 'green' : 'amber' }}" wire:click="togglePaymentStatus({{ $sal->salary_id }})" title="Click to toggle status" style="cursor:pointer;border:none">
+                                    <span class="dot"></span>{{ $isPaid ? 'Paid' : 'Pending' }}
+                                </button>
+                            </td>
+                            <td class="r">
+                                <div style="display:inline-flex;gap:6px">
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="viewPayslip({{ $sal->salary_id }})" title="View Official Payslip">
+                                        <i class="bi bi-file-earmark-text"></i> Payslip
+                                    </button>
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="editSalary({{ $sal->salary_id }})" title="Adjust Salary / Bonuses">
+                                        <i class="bi bi-sliders"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="deleteSalary({{ $sal->salary_id }})" wire:confirm="Delete this payroll record?" title="Delete" style="color:var(--rose)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" style="text-align:center;padding:48px 20px;color:var(--text-3)">
+                                <i class="bi bi-cash-stack" style="font-size:32px;display:block;margin-bottom:8px;opacity:.5"></i>
+                                No salary records found for {{ $months[$selectedMonth] }} {{ $selectedYear }}.
+                                <div style="margin-top:12px">
+                                    <button type="button" class="btn btn-sm btn-gold" wire:click="generateMonthlyPayroll">
+                                        <i class="bi bi-calculator"></i> Run Payroll
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <div style="margin-top:16px">
         {{ $salaries->links() }}

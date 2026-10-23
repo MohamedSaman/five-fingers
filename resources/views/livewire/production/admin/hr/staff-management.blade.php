@@ -66,108 +66,113 @@
         </article>
     </section>
 
-    <!-- Toolbar Filters -->
-    <div class="toolbar card" style="margin-bottom:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:280px">
-            <div class="input-wrap prefix" style="flex:1">
-                <span class="unit"><i class="bi bi-search"></i></span>
-                <input type="search" class="input" wire:model.live.debounce.300ms="search" placeholder="Search by name, role, email, NIC…">
+    <!-- Artisans Table Section -->
+    <section class="card">
+        <div class="toolbar">
+            <div class="search">
+                <i class="bi bi-search"></i>
+                <input type="search" class="input" placeholder="Search by name, role, email, NIC…" wire:model.live.debounce.300ms="search" aria-label="Search artisans">
             </div>
-            <select class="select" wire:model.live="departmentFilter" style="max-width:200px">
+
+            <select class="select" wire:model.live="departmentFilter" style="width:auto;min-width:180px" aria-label="Filter by division">
                 <option value="">All Divisions</option>
                 @foreach ($departments as $dept)
                     <option value="{{ $dept }}">{{ $dept }}</option>
                 @endforeach
             </select>
-            <select class="select" wire:model.live="statusFilter" style="max-width:140px">
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-        </div>
-    </div>
 
-    <!-- Table -->
-    <div class="table-card">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th style="min-width:240px">Artisan / Staff</th>
-                    <th>Division & Role</th>
-                    <th>Joined</th>
-                    <th>Base Salary</th>
-                    <th>Status</th>
-                    <th style="text-align:right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($staffMembers as $staff)
-                    @php
-                        $detail = $staff->userDetail;
-                        $dept = $detail?->department ?? 'General';
-                        $role = $detail?->work_role ?? 'Artisan';
-                        $deptCol = $deptColors[$dept] ?? '';
-                        $isActive = ($detail?->status ?? 'active') === 'active';
-                    @endphp
-                    <tr wire:key="staff-{{ $staff->id }}">
-                        <td>
-                            <div style="display:flex;align-items:center;gap:12px">
-                                <div class="avatar" style="width:40px;height:40px;font-size:15px;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold-line);border-radius:12px;display:grid;place-items:center;font-weight:700">
-                                    {{ strtoupper(substr($staff->name, 0, 1)) }}
-                                </div>
-                                <div style="min-width:0">
-                                    <div style="font-weight:700;color:var(--text)">{{ $staff->name }}</div>
-                                    <div style="font-size:12px;color:var(--text-dim)">{{ $staff->email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div style="display:flex;flex-direction:column;gap:3px">
-                                <span class="chip {{ $deptCol }}" style="height:20px;font-size:11px;align-self:flex-start">{{ $dept }}</span>
-                                <span style="font-size:12.5px;color:var(--text-muted);font-weight:500">{{ $role }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="mono" style="font-size:12px;color:var(--text-muted)">
-                                {{ $detail?->join_date ? $detail->join_date->format('d M Y') : '—' }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="money gold" style="font-size:13.5px">
-                                <span class="cur">Rs</span>{{ $rs($detail?->basic_salary ?? 0) }}
-                            </div>
-                            <span style="font-size:11px;color:var(--text-dim)">/ month</span>
-                        </td>
-                        <td>
-                            <button type="button" class="chip {{ $isActive ? 'green' : '' }}" wire:click="toggleStatus({{ $staff->id }})" title="Click to toggle status" style="cursor:pointer;border:none">
-                                <span class="dot"></span>{{ $isActive ? 'Active' : 'Inactive' }}
-                            </button>
-                        </td>
-                        <td style="text-align:right">
-                            <div style="display:inline-flex;gap:6px">
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="viewStaff({{ $staff->id }})" title="View Dossier">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="editStaff({{ $staff->id }})" title="Edit Details">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" wire:click="deleteStaff({{ $staff->id }})" wire:confirm="Are you sure you want to remove this staff member?" title="Remove" style="color:var(--rose)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
+            <div class="filter-tabs" role="tablist" aria-label="Status filter">
+                <button type="button" class="{{ $statusFilter === '' ? 'is-active' : '' }}" wire:click="$set('statusFilter', '')">All</button>
+                <button type="button" class="{{ $statusFilter === 'active' ? 'is-active' : '' }}" wire:click="$set('statusFilter', 'active')">Active</button>
+                <button type="button" class="{{ $statusFilter === 'inactive' ? 'is-active' : '' }}" wire:click="$set('statusFilter', 'inactive')">Inactive</button>
+            </div>
+        </div>
+
+        <div class="table-wrap" tabindex="0">
+            <table class="tbl">
+                <thead>
                     <tr>
-                        <td colspan="6" style="text-align:center;padding:48px 20px;color:var(--text-dim)">
-                            <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px;opacity:.5"></i>
-                            No artisans or staff members match your criteria.
-                        </td>
+                        <th scope="col" style="min-width:280px">Artisan / Craftsman</th>
+                        <th scope="col">Division & Designation</th>
+                        <th scope="col">Joined</th>
+                        <th scope="col" class="r">Basic Salary</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="r">Actions</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @forelse ($staffMembers as $staff)
+                        @php
+                            $detail = $staff->userDetail;
+                            $dept = $detail?->department ?? 'Bench & Setting';
+                            $role = $detail?->work_role ?? 'Artisan';
+                            $deptCol = $deptColors[$dept] ?? '';
+                            $isActive = ($detail?->status ?? 'active') === 'active';
+                        @endphp
+                        <tr wire:key="staff-{{ $staff->id }}">
+                            <th scope="row">
+                                <div class="job">
+                                    <div class="job-thumb gold" style="font-size:18px">
+                                        <i class="bi bi-person-badge"></i>
+                                    </div>
+                                    <div style="min-width:0">
+                                        <div class="job-title">{{ $staff->name }}</div>
+                                        <div class="job-meta">
+                                            <span>{{ $staff->email }}</span>
+                                            <span>·</span>
+                                            <span>NIC: {{ $detail?->nic_num ?: '—' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <td>
+                                <div style="display:flex;flex-direction:column;gap:4px">
+                                    <span class="chip {{ $deptCol }}" style="height:20px;font-size:10.5px;align-self:flex-start">{{ $dept }}</span>
+                                    <span style="font-size:13px;font-weight:600;color:var(--text)">{{ $role }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="mono" style="font-size:12.5px;color:var(--text-2)">
+                                    {{ $detail?->join_date ? $detail->join_date->format('d M Y') : '—' }}
+                                </span>
+                            </td>
+                            <td class="r">
+                                <div class="money gold" style="font-size:14px">
+                                    <span class="cur">Rs</span>{{ $rs($detail?->basic_salary ?? 0) }}
+                                </div>
+                                <span style="font-size:11px;color:var(--text-3)">/ month</span>
+                            </td>
+                            <td>
+                                <button type="button" class="chip {{ $isActive ? 'green' : '' }}" wire:click="toggleStatus({{ $staff->id }})" title="Click to toggle status" style="cursor:pointer;border:none">
+                                    <span class="dot"></span>{{ $isActive ? 'Active' : 'Inactive' }}
+                                </button>
+                            </td>
+                            <td class="r">
+                                <div style="display:inline-flex;gap:6px">
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="viewStaff({{ $staff->id }})" title="View Dossier">
+                                        <i class="bi bi-eye"></i> Dossier
+                                    </button>
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="editStaff({{ $staff->id }})" title="Edit Details">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-ghost btn-sm" wire:click="deleteStaff({{ $staff->id }})" wire:confirm="Are you sure you want to remove this staff member?" title="Remove" style="color:var(--rose)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:48px 20px;color:var(--text-3)">
+                                <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px;opacity:.5"></i>
+                                No artisans or staff members match your criteria.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <div style="margin-top:16px">
         {{ $staffMembers->links() }}
@@ -301,8 +306,8 @@
         <dialog class="dlg" open style="max-width:720px">
             <header class="dlg-head">
                 <div style="display:flex;align-items:center;gap:14px">
-                    <div class="avatar" style="width:48px;height:48px;font-size:18px;background:var(--gold-soft);color:var(--gold);border:1.5px solid var(--gold-line);border-radius:14px;display:grid;place-items:center;font-weight:700">
-                        {{ strtoupper(substr($selectedStaff->name, 0, 1)) }}
+                    <div class="job-thumb gold" style="width:50px;height:50px;font-size:22px">
+                        <i class="bi bi-person-badge"></i>
                     </div>
                     <div>
                         <span class="dlg-kicker">CRAFTSMAN DOSSIER</span>
