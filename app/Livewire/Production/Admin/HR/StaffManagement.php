@@ -109,6 +109,7 @@ class StaffManagement extends Component
             'name' => $this->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),
+            'contact' => $this->phone ?: '+94 77 123 4567',
             'role' => 'staff',
             'module' => 'production',
         ]);
@@ -140,11 +141,11 @@ class StaffManagement extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->password = '';
+        $this->phone = $user->contact ?? '';
         $this->department = $detail?->department ?? 'Bench & Setting';
         $this->work_role = $detail?->work_role ?? 'Artisan';
         $this->basic_salary = (float) ($detail?->basic_salary ?? 80000);
         $this->nic_num = $detail?->nic_num ?? '';
-        $this->phone = '';
         $this->address = $detail?->address ?? '';
         $this->gender = $detail?->gender ?? 'male';
         $this->join_date = $detail?->join_date ? $detail->join_date->toDateString() : now()->toDateString();
@@ -160,6 +161,7 @@ class StaffManagement extends Component
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $this->staffId,
             'password' => 'nullable|min:6',
+            'phone' => 'nullable|string|max:50',
             'department' => 'required|string',
             'work_role' => 'required|string',
             'basic_salary' => 'required|numeric|min:0',
@@ -170,6 +172,9 @@ class StaffManagement extends Component
         $user = User::findOrFail($this->staffId);
         $user->name = $this->name;
         $user->email = $this->email;
+        if (!empty($this->phone)) {
+            $user->contact = $this->phone;
+        }
         if (!empty($this->password)) {
             $user->password = Hash::make($this->password);
         }

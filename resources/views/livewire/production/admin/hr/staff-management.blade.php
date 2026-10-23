@@ -265,7 +265,12 @@
                         </div>
                     </div>
 
-                    <div class="grid-2">
+                    <div class="grid-3">
+                        <div class="field">
+                            <label for="f-phone">Phone / WhatsApp *</label>
+                            <input id="f-phone" class="input" wire:model="phone" placeholder="e.g. +94 77 123 4567" required>
+                            @error('phone') <span class="error">{{ $message }}</span> @enderror
+                        </div>
                         <div class="field">
                             <label for="f-nic">National Identity Card (NIC)</label>
                             <input id="f-nic" class="input" wire:model="nic_num" placeholder="e.g. 199049182301">
