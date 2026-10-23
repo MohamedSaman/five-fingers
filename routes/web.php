@@ -87,15 +87,30 @@ use App\Livewire\Inventory\Admin\ProfitLoss;
 |
 */
 
-// Public routes
-Route::get('/', CustomLogin::class)->name('welcome')->middleware('guest');
+// ==========================================
+// WEBSITE (E-COMMERCE / STOREFRONT) ROUTES
+// ==========================================
+Route::name('website.')->group(function () {
+    Route::get('/', \App\Livewire\Website\Home::class)->name('home');
+    Route::get('/shop', \App\Livewire\Website\Shop::class)->name('shop');
+    Route::get('/product/{id}', \App\Livewire\Website\ProductDetail::class)->name('product-detail');
+    Route::get('/cart', \App\Livewire\Website\Cart::class)->name('cart');
+    Route::get('/checkout', \App\Livewire\Website\Checkout::class)->name('checkout');
+    Route::get('/about', \App\Livewire\Website\About::class)->name('about');
+    Route::get('/contact', \App\Livewire\Website\Contact::class)->name('contact');
+});
+
+// Admin / Staff Login Routes (Decides Inventory or Production)
+Route::get('/admin/login', CustomLogin::class)->name('login')->middleware('guest');
+Route::get('/login', fn() => redirect()->route('login'))->middleware('guest');
+Route::get('/welcome', fn() => redirect('/'))->name('welcome');
 
 // Custom logout route
 Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
-    return redirect('/');
+    return redirect('/admin/login');
 })->name('logout');
 
 // Routes that require authentication
@@ -462,35 +477,5 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             'historyTab' => 'sales'
         ]);
     })->name('test.product-history');
-});
-
-// ==========================================
-// 2. WEBSITE (E-COMMERCE / STOREFRONT) MODULE
-// ==========================================
-Route::prefix('store')->name('website.')->group(function () {
-    Route::get('/', \App\Livewire\Website\Home::class)->name('home');
-    Route::get('/shop', \App\Livewire\Website\Shop::class)->name('shop');
-    Route::get('/product/{id}', \App\Livewire\Website\ProductDetail::class)->name('product-detail');
-    Route::get('/cart', \App\Livewire\Website\Cart::class)->name('cart');
-    Route::get('/checkout', \App\Livewire\Website\Checkout::class)->name('checkout');
-    Route::get('/about', \App\Livewire\Website\About::class)->name('about');
-    Route::get('/contact', \App\Livewire\Website\Contact::class)->name('contact');
-});
-
-// ==========================================
-// 3. PRODUCTION MODULE (MANUFACTURING)
-// ==========================================
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->prefix('production')->name('production.')->group(function () {
-    // Admin Production Routes
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', \App\Livewire\Production\Admin\ProductionDashboard::class)->name('dashboard');
-        Route::get('/batches', \App\Livewire\Production\Admin\Batches::class)->name('batches');
-        Route::get('/materials', \App\Livewire\Production\Admin\Materials::class)->name('materials');
-    });
-
-    // Staff Production Routes
-    Route::middleware('role:staff')->prefix('staff')->name('staff.')->group(function () {
-        Route::get('/dashboard', \App\Livewire\Production\Staff\StaffDashboard::class)->name('dashboard');
-    });
 });
 

@@ -26,6 +26,7 @@
                     <li><a href="{{ route('website.shop') }}" class="text-secondary text-decoration-none hover-gold">Our Collection</a></li>
                     <li><a href="{{ route('website.about') }}" class="text-secondary text-decoration-none hover-gold">About Heritage</a></li>
                     <li><a href="{{ route('website.contact') }}" class="text-secondary text-decoration-none hover-gold">Contact Us</a></li>
+                    <li><a href="{{ route('login') }}" class="text-warning text-decoration-none hover-gold"><i class="bi bi-person-lock me-1"></i> Staff Portal</a></li>
                 </ul>
             </div>
 

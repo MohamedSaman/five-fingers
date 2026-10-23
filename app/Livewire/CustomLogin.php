@@ -3,15 +3,25 @@
 namespace App\Livewire;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 
 #[Layout('layouts.guest')]
+#[Title('Sign In - Five Fingers')]
 class CustomLogin extends Component
 {
     public $email = '';
     public $password = '';
     public $remember = false;
+    public $selectedModule = 'inventory'; // 'inventory' or 'production'
+
+    public function setModule($module)
+    {
+        $this->selectedModule = $module;
+    }
 
     public function render()
     {
@@ -25,29 +35,41 @@ class CustomLogin extends Component
             'password' => 'required',
         ]);
 
-        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        $user = User::where('email', $this->email)->first();
+
+        if ($user && Hash::check($this->password, $user->password)) {
+            // Check if user has access to the selected module
+            if (!$user->hasModuleAccess($this->selectedModule)) {
+                $this->addError('email', "This account does not have access to the " . ucfirst($this->selectedModule) . " module.");
+                $this->password = '';
+                return;
+            }
+
+            Auth::login($user, $this->remember);
+            session()->put('active_module', $this->selectedModule);
             session()->regenerate();
-            
-            $user = Auth::user();
-            
-            if ($user && $user->role === 'admin') {
-                return redirect()->route('admin.dashboard');
-            } else if ($user && $user->role === 'staff') {
-                return redirect()->route('staff.dashboard');
+
+            // Redirect based on selected module & role
+            if ($this->selectedModule === 'production') {
+                session()->flash('status', 'Logged into Production Module');
+                if ($user->role === 'admin') {
+                    return redirect()->route('admin.dashboard');
+                } else {
+                    return redirect()->route('staff.dashboard');
+                }
             } else {
-                return redirect()->route('dashboard');
+                // Inventory module
+                if ($user->role === 'admin') {
+                    return redirect()->route('admin.dashboard');
+                } else if ($user->role === 'staff') {
+                    return redirect()->route('staff.dashboard');
+                } else {
+                    return redirect()->route('dashboard');
+                }
             }
         }
 
-        // When authentication fails, add an error to Livewire's error bag
         $this->addError('email', 'These credentials do not match our records.');
-        // Clear the password field for security and UX
         $this->password = '';
     }
-
-    /**
-     * Clear validation/error for a property when it is updated.
-     * This helps remove the red border / shaking animation as soon as user starts typing.
-     */
-
 }

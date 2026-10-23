@@ -21,8 +21,24 @@
         <!-- Centered login form overlay -->
         <div class="login-form-overlay">
             <!-- User icon / Logo -->
-            <div class="user-icon-container text-center mb-3">
-                <img src="{{ asset('images/five-fingers-logo.png') }}" alt="Five Fingers Logo" class="rounded-circle shadow" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #d4af37;">
+            <div class="user-icon-container text-center mb-2">
+                <img src="{{ asset('images/five-fingers-logo.png') }}" alt="Five Fingers Logo" class="rounded-circle shadow" style="width: 72px; height: 72px; object-fit: cover; border: 2px solid #d4af37;">
+            </div>
+
+            <!-- Module Switcher Tabs (Inventory vs Production) -->
+            <div class="d-flex justify-content-center gap-1 mb-3 p-1 rounded-pill mx-auto" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(212,175,55,0.3); max-width: 260px;">
+                <button type="button" 
+                        wire:click="setModule('inventory')" 
+                        class="btn btn-sm rounded-pill px-3 py-1 fw-semibold flex-fill {{ $selectedModule === 'inventory' ? 'btn-warning text-dark shadow-sm' : 'text-light' }}"
+                        style="{{ $selectedModule === 'inventory' ? 'background: #d4af37; border-color: #d4af37; font-weight: 700;' : 'background: transparent; border: none;' }}">
+                    <i class="bi bi-box-seam me-1"></i> Inventory
+                </button>
+                <button type="button" 
+                        wire:click="setModule('production')" 
+                        class="btn btn-sm rounded-pill px-3 py-1 fw-semibold flex-fill {{ $selectedModule === 'production' ? 'btn-warning text-dark shadow-sm' : 'text-light' }}"
+                        style="{{ $selectedModule === 'production' ? 'background: #d4af37; border-color: #d4af37; font-weight: 700;' : 'background: transparent; border: none;' }}">
+                    <i class="bi bi-hammer me-1"></i> Production
+                </button>
             </div>
 
             <form wire:submit.prevent="login">
@@ -83,6 +99,12 @@
                             <i class="bi bi-whatsapp"></i>
                         </a>
                     </div>
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="/" class="small text-decoration-none text-light" style="opacity: 0.85;">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Website
+                    </a>
                 </div>
             </form>
         </div>

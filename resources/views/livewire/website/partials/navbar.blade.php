@@ -34,10 +34,17 @@
                     <span>Cart</span>
                     <span class="badge bg-warning text-dark rounded-pill">0</span>
                 </a>
+                @auth
                 <a href="{{ url('/dashboard') }}" class="btn btn-gold d-flex align-items-center gap-2">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Portal</span>
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
                 </a>
+                @else
+                <a href="{{ route('login') }}" class="btn btn-gold d-flex align-items-center gap-2">
+                    <i class="bi bi-person-lock"></i>
+                    <span>Portal Login</span>
+                </a>
+                @endauth
             </div>
         </div>
     </div>

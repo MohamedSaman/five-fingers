@@ -32,6 +32,7 @@ class User extends Authenticatable
         'password',
         'role',
         'contact',
+        'module',
     ];
 
     /**
@@ -113,5 +114,20 @@ class User extends Authenticatable
     public function isStaff()
     {
         return $this->role === 'staff';
+    }
+
+    /**
+     * Check if user has access to a specific module
+     */
+    public function hasModuleAccess($module)
+    {
+        if ($this->module === 'both') {
+            return true;
+        }
+        // Normalize inventory spelling if needed
+        if (in_array($module, ['inventory', 'invontery']) && in_array($this->module, ['inventory', 'invontery'])) {
+            return true;
+        }
+        return $this->module === $module;
     }
 }
