@@ -256,8 +256,8 @@
         }
 
         .sidebar-header {
-            padding: 0 20px 20px;
-            margin-bottom: 15px;
+            padding: 0 15px 10px;
+            margin-bottom: 5px;
         }
 
         .sidebar-title {
@@ -770,7 +770,7 @@
         <div class="sidebar">
             <div class="sidebar-header d-flex justify-content-center">
                 <div class="sidebar-title text-center">
-                    <img src="{{ asset('images/five-fingers-logo.png') }}" alt="Five Fingers Logo" width="160" class="img-fluid rounded">
+                    <img src="{{ asset('images/five-fingers-logo.png') }}" alt="Five Fingers Logo" style="max-height: 70px; max-width: 100px; width: auto; object-fit: contain;" class="img-fluid rounded">
                 </div>
             </div>
             <ul class="nav flex-column">
