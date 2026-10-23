@@ -180,8 +180,8 @@
 
     <!-- ================= CREATE / EDIT MODAL ================= -->
     @if ($showCreateModal || $showEditModal)
-        <div class="dlg-backdrop"></div>
-        <dialog class="dlg" open style="max-width:680px">
+        <div class="dlg-backdrop" wire:click="closeModal"></div>
+        <div class="dlg" role="dialog" aria-modal="true" style="max-width:680px" @keydown.escape.window="$wire.closeModal()">
             <header class="dlg-head">
                 <div>
                     <span class="dlg-kicker">{{ $showCreateModal ? 'ATELIER ROSTER' : 'UPDATE RECORD' }}</span>
@@ -299,7 +299,7 @@
                     </button>
                 </div>
             </form>
-        </dialog>
+        </div>
     @endif
 
     <!-- ================= VIEW DOSSIER MODAL ================= -->
@@ -307,8 +307,8 @@
         @php
             $d = $selectedStaff->userDetail;
         @endphp
-        <div class="dlg-backdrop"></div>
-        <dialog class="dlg" open style="max-width:720px">
+        <div class="dlg-backdrop" wire:click="closeModal"></div>
+        <div class="dlg" role="dialog" aria-modal="true" style="max-width:720px" @keydown.escape.window="$wire.closeModal()">
             <header class="dlg-head">
                 <div style="display:flex;align-items:center;gap:14px">
                     <div class="job-thumb gold" style="width:50px;height:50px;font-size:22px">
@@ -410,6 +410,6 @@
             <div class="dlg-foot" style="justify-content:flex-end">
                 <button type="button" class="btn btn-ghost" wire:click="closeModal">Close</button>
             </div>
-        </dialog>
+        </div>
     @endif
 </div>

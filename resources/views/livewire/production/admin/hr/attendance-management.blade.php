@@ -206,8 +206,8 @@
 
     <!-- ================= ATTENDANCE MODAL ================= -->
     @if ($showAttendanceModal)
-        <div class="dlg-backdrop"></div>
-        <dialog class="dlg" open style="max-width:560px">
+        <div class="dlg-backdrop" wire:click="closeModal"></div>
+        <div class="dlg" role="dialog" aria-modal="true" style="max-width:560px" @keydown.escape.window="$wire.closeModal()">
             <header class="dlg-head">
                 <div>
                     <span class="dlg-kicker">TIMEKEEPING ENTRY</span>
@@ -294,6 +294,6 @@
                     </button>
                 </div>
             </form>
-        </dialog>
+        </div>
     @endif
 </div>

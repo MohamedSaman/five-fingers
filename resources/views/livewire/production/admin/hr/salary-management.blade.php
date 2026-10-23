@@ -201,8 +201,8 @@
             $d = $u?->userDetail;
             $mName = $payslip->salary_month ? $payslip->salary_month->format('F Y') : 'Current Period';
         @endphp
-        <div class="dlg-backdrop"></div>
-        <dialog class="dlg" open style="max-width:680px">
+        <div class="dlg-backdrop" wire:click="closeModal"></div>
+        <div class="dlg" role="dialog" aria-modal="true" style="max-width:680px" @keydown.escape.window="$wire.closeModal()">
             <header class="dlg-head" style="border-bottom:1px solid var(--gold-line)">
                 <div style="display:flex;align-items:center;gap:12px">
                     <img src="{{ asset('images/five-fingers-logo.png') }}" style="height:36px;width:auto" alt="Logo">
@@ -301,13 +301,13 @@
                 </button>
                 <button type="button" class="btn btn-gold" wire:click="closeModal">Done</button>
             </div>
-        </dialog>
+        </div>
     @endif
 
     <!-- ================= ADJUST SALARY MODAL ================= -->
     @if ($showAdjustModal)
-        <div class="dlg-backdrop"></div>
-        <dialog class="dlg" open style="max-width:540px">
+        <div class="dlg-backdrop" wire:click="closeModal"></div>
+        <div class="dlg" role="dialog" aria-modal="true" style="max-width:540px" @keydown.escape.window="$wire.closeModal()">
             <header class="dlg-head">
                 <div>
                     <span class="dlg-kicker">PAYROLL ADJUSTMENT</span>
@@ -375,6 +375,6 @@
                     <button type="submit" class="btn btn-gold">Save Adjustment</button>
                 </div>
             </form>
-        </dialog>
+        </div>
     @endif
 </div>

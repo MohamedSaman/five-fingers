@@ -1418,7 +1418,80 @@ input[type="number"].input {
     to { opacity: 1; transform: none; }
 }
 
+/* Modal Dialog & Backdrop */
+.dlg-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 4, 6, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    animation: fadeIn 0.2s var(--ease);
+}
+
+.dlg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    width: min(100%, calc(100vw - 32px));
+    max-height: calc(100dvh - 48px);
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-xl);
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: 0 40px 120px -30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(217, 180, 90, 0.12);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: dlg-in 0.35s var(--ease);
+}
+
+.dlg form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.dlg-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm, 6px);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dlg-close:hover {
+    background: var(--panel-3);
+    color: var(--text);
+    border-color: var(--line-2);
+    transform: scale(1.05);
+}
+
+.dlg-kicker {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2px;
+}
+
 .dlg-head {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1437,7 +1510,7 @@ input[type="number"].input {
 }
 
 .dlg-body {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     padding: 24px 26px;
@@ -1446,6 +1519,7 @@ input[type="number"].input {
 }
 
 .dlg-foot {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2272,7 +2346,7 @@ input[type="number"].input {
     position: fixed;
     right: 24px;
     bottom: 24px;
-    z-index: 80;
+    z-index: 9999;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2287,6 +2361,8 @@ input[type="number"].input {
 
 .toast.success i { color: var(--green); }
 .toast.error i { color: var(--red); }
+.toast.info i { color: var(--blue, #38bdf8); }
+.toast.warning i { color: var(--amber, #f59e0b); }
 
 @keyframes toast-in {
     from { opacity: 0; transform: translateY(12px); }
@@ -2570,13 +2646,35 @@ input[type="number"].input {
     background: rgba(15, 23, 42, 0.02);
 }
 
-[data-theme="light"] .pd-dialog {
+[data-theme="light"] .pd-dialog,
+[data-theme="light"] .dlg {
     background: #ffffff;
     color: var(--text);
+    border-color: var(--line);
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25);
 }
 
-[data-theme="light"] .pd-dialog::backdrop {
+[data-theme="light"] .pd-dialog::backdrop,
+[data-theme="light"] .dlg-backdrop {
     background: rgba(15, 23, 42, 0.45);
+}
+
+[data-theme="light"] .dlg-close {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+[data-theme="light"] .dlg-close:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+[data-theme="light"] .toast {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+    box-shadow: 0 16px 40px -10px rgba(15, 23, 42, 0.18);
+    color: #1e293b;
 }
 
 [data-theme="light"] .stage-hero {

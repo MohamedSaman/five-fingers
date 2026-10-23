@@ -202,6 +202,66 @@
         </main>
     </div>
 
+    <!-- Global Atelier Toast Notification System -->
+    <div x-data="{
+        open: false,
+        msg: '',
+        type: 'success',
+        timer: null,
+        show(payload) {
+            if (!payload) return;
+            let m = '';
+            let t = 'success';
+            if (typeof payload === 'string') {
+                m = payload;
+            } else if (Array.isArray(payload) && payload.length > 0) {
+                const item = payload[0];
+                if (typeof item === 'object' && item !== null) {
+                    m = item.message || item.msg || item.text || '';
+                    t = item.type || 'success';
+                } else {
+                    m = String(item);
+                }
+            } else if (typeof payload === 'object') {
+                m = payload.message || payload.msg || payload.text || '';
+                t = payload.type || 'success';
+            }
+            if (!m) return;
+            this.msg = m;
+            this.type = t || 'success';
+            this.open = true;
+            if (this.timer) clearTimeout(this.timer);
+            this.timer = setTimeout(() => { this.open = false; }, 4000);
+        }
+    }"
+    @toast.window="show($event.detail)"
+    @show-toast.window="show($event.detail)"
+    @alert.window="show($event.detail)"
+    @notify.window="show($event.detail)"
+    class="toast"
+    :class="type"
+    x-show="open"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 transform translate-y-3"
+    x-transition:enter-end="opacity-100 transform translate-y-0"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 transform translate-y-0"
+    x-transition:leave-end="opacity-0 transform translate-y-3"
+    x-cloak
+    style="z-index: 9999;"
+    >
+        <i class="bi" :class="{
+            'bi-check-circle-fill': type === 'success',
+            'bi-exclamation-triangle-fill': type === 'error' || type === 'danger',
+            'bi-info-circle-fill': type === 'info' || type === 'primary',
+            'bi-exclamation-circle-fill': type === 'warning'
+        }"></i>
+        <span x-text="msg" style="font-weight: 500"></span>
+        <button type="button" @click="open = false" style="background:transparent;border:0;color:inherit;opacity:0.6;cursor:pointer;padding:0 0 0 8px;font-size:16px;line-height:1;margin-left:auto" aria-label="Close notification">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+
     <style>[x-cloak]{display:none!important}</style>
     @livewireScripts
     @stack('scripts')

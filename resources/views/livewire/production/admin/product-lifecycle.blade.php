@@ -19,25 +19,9 @@
     $pctLoss = max(0, 100 - ($pctMetal + $pctStone + $pctLabor + $pctCons));
 @endphp
 
-<div class="lc" x-data="{
-    toastMsg: '',
-    toastType: 'success',
-    toastOpen: false,
-    showToast(msg, type = 'success') {
-        this.toastMsg = msg;
-        this.toastType = type;
-        this.toastOpen = true;
-        setTimeout(() => { this.toastOpen = false; }, 3500);
-    }
-}" @toast.window="showToast($event.detail.message, $event.detail.type)">
+<div class="lc">
 
     <div class="lw-loading" wire:loading.delay></div>
-
-    <!-- Toast Notification -->
-    <div class="toast" :class="toastType" x-show="toastOpen" x-transition.opacity.duration.200ms x-cloak>
-        <i class="bi" :class="toastType === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
-        <span x-text="toastMsg"></span>
-    </div>
 
     <!-- ================= TOP HERO / SUMMARY BAR ================= -->
     <header class="lc-hero">

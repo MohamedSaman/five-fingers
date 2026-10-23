@@ -90,20 +90,25 @@ class StaffManagement extends Component
 
     public function saveStaff()
     {
-        $this->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|min:6',
-            'department' => 'required|string',
-            'work_role' => 'required|string',
-            'basic_salary' => 'required|numeric|min:0',
-            'nic_num' => 'nullable|string|max:50',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'gender' => 'required|string|in:male,female,other',
-            'join_date' => 'nullable|date',
-            'status' => 'required|string|in:active,inactive',
-        ]);
+        try {
+            $this->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email',
+                'password' => 'required|min:6',
+                'department' => 'required|string',
+                'work_role' => 'required|string',
+                'basic_salary' => 'required|numeric|min:0',
+                'nic_num' => 'nullable|string|max:50',
+                'phone' => 'nullable|string|max:50',
+                'address' => 'nullable|string',
+                'gender' => 'required|string|in:male,female,other',
+                'join_date' => 'nullable|date',
+                'status' => 'required|string|in:active,inactive',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('toast', type: 'error', message: 'Please check the form for errors.');
+            throw $e;
+        }
 
         $user = User::create([
             'name' => $this->name,
@@ -157,17 +162,22 @@ class StaffManagement extends Component
 
     public function updateStaff()
     {
-        $this->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $this->staffId,
-            'password' => 'nullable|min:6',
-            'phone' => 'nullable|string|max:50',
-            'department' => 'required|string',
-            'work_role' => 'required|string',
-            'basic_salary' => 'required|numeric|min:0',
-            'gender' => 'required|string|in:male,female,other',
-            'status' => 'required|string|in:active,inactive',
-        ]);
+        try {
+            $this->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email,' . $this->staffId,
+                'password' => 'nullable|min:6',
+                'phone' => 'nullable|string|max:50',
+                'department' => 'required|string',
+                'work_role' => 'required|string',
+                'basic_salary' => 'required|numeric|min:0',
+                'gender' => 'required|string|in:male,female,other',
+                'status' => 'required|string|in:active,inactive',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('toast', type: 'error', message: 'Please check the form for errors.');
+            throw $e;
+        }
 
         $user = User::findOrFail($this->staffId);
         $user->name = $this->name;
